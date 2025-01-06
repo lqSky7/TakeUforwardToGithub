@@ -1,6 +1,6 @@
 let QUES = '';
 let DESCRIPTION = '';
-
+//udca
 const pollForQuestion = setInterval(() => {
     const headingElem = document.querySelector('h1.text-2xl.font-bold.text-\\[\\#212121\\].dark\\:text-zinc-200.relative');
     const paragraphElem = document.querySelector('p.mt-6.w-full.text-\\[\\#212121\\].text-\\[14px\\].dark\\:text-zinc-200');
@@ -110,13 +110,23 @@ Stats:
 
 ${PUBLIC_CODE}`;
 
-        const sanitizedSlug = PROBLEM_SLUG.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+
+        const urlPath = window.location.pathname
+            .replace('/plus/', '') // Remove 'plus'
+            .replace('/data-structures-and-algorithm/', '') // Remove DSA prefix
+            .replace('/submissions', '') // Remove submissions
+            .split('/') 
+            .filter(part => part.length > 0 && part !== 'data-structures-and-algorithm'); // Remove 
+
+        // Create directory path from URL parts
+        const dirPath = urlPath.join('/');
+
         const fileExtension =
             SELECTED_LANGUAGE === 'cpp' ? 'cpp' :
             SELECTED_LANGUAGE === 'python' ? 'py' :
             SELECTED_LANGUAGE === 'javascript' ? 'js' : 'txt';
 
-        const filePath = `solutions/${sanitizedSlug}/solution.${fileExtension}`;
+        const filePath = `${dirPath}/solution.${fileExtension}`;
         const success = await createOrUpdateFile(filePath, fileContent, commitMessage);
 
         if (success) {
