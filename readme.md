@@ -1,6 +1,6 @@
 # TakeUforward To GitHub 🚀
 
-![Project Banner](assets/banner.png)
+![Project Banner](assets/main.png)
 
 ## Description
 
@@ -46,7 +46,7 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 ## License
 
-This project is licensed under the (will add later)
+This project is licensed under the Mozilla Public License 2.0. See the LICENSE file for details.
 
 ## Images
 

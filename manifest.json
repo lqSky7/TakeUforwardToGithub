@@ -10,6 +10,11 @@
         "tabs",
         "webRequest"
       ],
+      "icons": {
+        "16": "assets/16.png",
+        "48": "assets/48.png",
+        "128": "assets/icon128.png"
+      },
 
       "web_accessible_resources": [
     {
