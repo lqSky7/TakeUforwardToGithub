@@ -1,0 +1,37 @@
+{
+    "name": "TakeUForwardToGithub",
+    "version": "0.10",
+    "manifest_version": 3,
+    "description": "Auto push takeuforward.org solutions to your github repo",
+    "permissions": [
+        "storage",
+        "scripting",
+        "activeTab",
+        "tabs",
+        "webRequest"
+      ],
+
+      "web_accessible_resources": [
+    {
+      "resources": ["interceptor.js"],
+      "matches": ["<all_urls>"]
+    }],
+
+      "host_permissions": [
+        "https://takeuforward.org/*",
+        "https://api.github.com/*",
+        "*://*.takeuforward.org/*"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": ["https://takeuforward.org/*"],
+        "js": ["content.js"]
+      }
+    ],
+    "action": {
+      "default_title": "TakeUForwardToGithub"
+    }
+  }
