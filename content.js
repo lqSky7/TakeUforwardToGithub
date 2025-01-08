@@ -2,8 +2,8 @@ let QUES = '';
 let DESCRIPTION = '';
 //udca
 const pollForQuestion = setInterval(() => {
-    const headingElem = document.querySelector('h1.text-2xl.font-bold.text-\\[\\#212121\\].dark\\:text-zinc-200.relative');
-    const paragraphElem = document.querySelector('p.mt-6.w-full.text-\\[\\#212121\\].text-\\[14px\\].dark\\:text-zinc-200');
+    const headingElem = document.querySelector('.text-2xl.font-bold.text-new_primary.dark\\:text-new_dark_primary.relative');
+    const paragraphElem = document.querySelector('p.mt-6');
     if (headingElem && paragraphElem) {
         QUES = headingElem.textContent || '';
         DESCRIPTION = paragraphElem.textContent || '';
