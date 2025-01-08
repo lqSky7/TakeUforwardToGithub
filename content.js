@@ -19,7 +19,7 @@ let SELECTED_LANGUAGE = '';
 let PUBLIC_CODE = '';
 
 if (parsedData.length > 0) {
-    const { problemSlug, selectedLanguage, publicCodeOfSelected } = parsedData[0];
+    const { problemSlug, selectedLanguage, publicCodeOfSelected } = parsedData[-1];
     PROBLEM_SLUG = problemSlug;
     SELECTED_LANGUAGE = selectedLanguage;
     PUBLIC_CODE = publicCodeOfSelected;
