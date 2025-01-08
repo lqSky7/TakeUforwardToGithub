@@ -9,7 +9,7 @@ const pollForQuestion = setInterval(() => {
         DESCRIPTION = paragraphElem.textContent || '';
         clearInterval(pollForQuestion);
     }
-}, 1000);
+}, 2000);
 
 
 const storedData = localStorage.getItem('storedData');
