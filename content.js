@@ -11,7 +11,6 @@ const pollForQuestion = setInterval(() => {
     }
 }, 2000);
 
-
 const storedData = localStorage.getItem('storedData');
 const parsedData = JSON.parse(storedData || '[]');
 let PROBLEM_SLUG = '';
@@ -19,12 +18,11 @@ let SELECTED_LANGUAGE = '';
 let PUBLIC_CODE = '';
 
 if (parsedData.length > 0) {
-    const { problemSlug, selectedLanguage, publicCodeOfSelected } = parsedData[-1];
+    const { problemSlug, selectedLanguage, publicCodeOfSelected } = parsedData.at(-1);
     PROBLEM_SLUG = problemSlug;
     SELECTED_LANGUAGE = selectedLanguage;
     PUBLIC_CODE = publicCodeOfSelected;
 }
-
 
 const GITHUB_CONFIG = {
     token: "",
@@ -45,6 +43,7 @@ const initGitHubConfig = () => {
 
 const createOrUpdateFile = async (filePath, content, commitMessage) => {
     try {
+        console.log('Creating/updating file...');
         const response = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filePath}`, {
             headers: {
                 'Authorization': `token ${GITHUB_CONFIG.token}`,
@@ -76,6 +75,7 @@ const createOrUpdateFile = async (filePath, content, commitMessage) => {
         if (!updateResponse.ok) {
             throw new Error(`GitHub API responded with ${updateResponse.status}`);
         }
+        console.log('File successfully created/updated!');
         return true;
     } catch (error) {
         console.error('Error creating/updating file:', error);
@@ -85,6 +85,7 @@ const createOrUpdateFile = async (filePath, content, commitMessage) => {
 
 const handleSubmissionPush = async (Sdata) => {
     try {
+        console.log('Handling submission push...');
         if (!Sdata.success) return false;
         if (!GITHUB_CONFIG.token) initGitHubConfig();
 
@@ -109,7 +110,6 @@ Stats:
 */
 
 ${PUBLIC_CODE}`;
-
 
         const urlPath = window.location.pathname
             .replace('/plus/', '') // Remove 'plus'
@@ -141,24 +141,33 @@ ${PUBLIC_CODE}`;
     }
 };
 
-
 const injectInterceptor = () => {
-    console.log('Injecting interceptor...');
     const script = document.createElement('script');
     script.src = chrome.runtime.getURL('interceptor.js');
     (document.head || document.documentElement).appendChild(script);
     script.onload = () => script.remove();
-  };
-  
+};
 
-  window.addEventListener('message', async (event) => {
+window.addEventListener('message', async (event) => {
+    console.log('Received submission response');
     if (event.data.type === 'SUBMISSION_RESPONSE') {
-      const submissionData = event.data.payload;
-      if (submissionData.success === true) {
-        await handleSubmissionPush(submissionData);
-      }
+        const submissionData = event.data.payload;
+        if (submissionData.success === true) {
+            await handleSubmissionPush(submissionData);
+        }
     }
-  });
-  
-  injectInterceptor();
-  initSubmitButtonMonitor();
+});
+
+function initSubmitButtonMonitor() {
+    document.addEventListener('DOMContentLoaded', () => {
+        const submitBtn = document.querySelector('button[data-tooltip-id="Submit"]');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', () => {
+                console.log('Submit button clicked');
+            });
+        }
+    });
+}
+
+injectInterceptor();
+initSubmitButtonMonitor();
