@@ -111,25 +111,15 @@ const handleSubmissionPush = async (Sdata) => {
         }
 
         const commitMessage = `Solved: ${QUES}\n\n` +
-            `Success: ${Sdata.success}\n` +
-            `Test Cases: ${Sdata.totalTestCases}\n` +
-            `Time: ${Sdata.averageTime}\n` +
-            `Memory: ${Sdata.averageMemory}`;
+            `Problem Link: ${window.location.href}\n\n` +
+            `Description:\n${DESCRIPTION}\n\n` +
+            `Stats:\n` +
+            `- Success: ${Sdata.success}\n` +
+            `- Test Cases: ${Sdata.totalTestCases}\n` +
+            `- Time: ${Sdata.averageTime}\n` +
+            `- Memory: ${Sdata.averageMemory}`;
 
-        const fileContent = `/*
-Problem: ${QUES}
-Problem Link: ${window.location.href}
-
-Description:
-${DESCRIPTION}
-
-Stats:
-- Success: ${Sdata.success}
-- Test Cases: ${Sdata.totalTestCases}
-- Time: ${Sdata.averageTime}
-- Memory: ${Sdata.averageMemory}
-*/
-
+        const fileContent = `// Solution for: ${QUES}
 ${PUBLIC_CODE}`;
 
         const urlPath = window.location.pathname
