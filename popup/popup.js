@@ -6,6 +6,24 @@ document.addEventListener('DOMContentLoaded', function() {
   const branchInput = document.getElementById('github-branch');
   const statusMessage = document.getElementById('status-message');
 
+  // Add token creation link after token input
+  const tokenLink = document.createElement('a');
+  tokenLink.href = 'https://github.com/settings/tokens/new';
+  tokenLink.textContent = 'Create a new GitHub token';
+  tokenLink.target = '_blank';
+  tokenLink.style.display = 'inline-block';
+  tokenLink.style.fontSize = '0.8em';
+  tokenLink.style.marginTop = '5px';
+  tokenInput.parentNode.insertBefore(tokenLink, tokenInput.nextSibling);
+  
+  // Add security note
+  const securityNote = document.createElement('p');
+  securityNote.textContent = 'Note: Your token is stored locally in your browser and no data is collected!';
+  securityNote.style.fontSize = '0.8em';
+  securityNote.style.color = '#666';
+  securityNote.style.marginTop = '5px';
+  tokenLink.parentNode.insertBefore(securityNote, tokenLink.nextSibling);
+
   // Load saved settings
   chrome.storage.sync.get(['github_token', 'github_owner', 'github_repo', 'github_branch'], function(data) {
     if (data.github_token) tokenInput.value = data.github_token;
