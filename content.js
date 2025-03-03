@@ -32,13 +32,18 @@ const GITHUB_CONFIG = {
 };
 
 const initGitHubConfig = () => {
-    GITHUB_CONFIG.token = localStorage.getItem('github_token') || prompt('Enter your GitHub token:');
-    GITHUB_CONFIG.owner = localStorage.getItem('github_owner') || prompt('Enter your GitHub username:');
-    GITHUB_CONFIG.repo = localStorage.getItem('github_repo') || prompt('Enter your repository name:');
-
-    localStorage.setItem('github_token', GITHUB_CONFIG.token);
-    localStorage.setItem('github_owner', GITHUB_CONFIG.owner);
-    localStorage.setItem('github_repo', GITHUB_CONFIG.repo);
+    // Use chrome.storage instead of localStorage
+    chrome.storage.sync.get(['github_token', 'github_owner', 'github_repo', 'github_branch'], (data) => {
+        GITHUB_CONFIG.token = data.github_token || '';
+        GITHUB_CONFIG.owner = data.github_owner || '';
+        GITHUB_CONFIG.repo = data.github_repo || '';
+        GITHUB_CONFIG.branch = data.github_branch || 'main';
+        
+        // If any config is missing, inform the user to set it up in the popup
+        if (!GITHUB_CONFIG.token || !GITHUB_CONFIG.owner || !GITHUB_CONFIG.repo) {
+            alert('Please configure your GitHub settings by clicking on the extension icon');
+        }
+    });
 };
 
 const createOrUpdateFile = async (filePath, content, commitMessage) => {
@@ -87,7 +92,23 @@ const handleSubmissionPush = async (Sdata) => {
     try {
         console.log('Handling submission push...');
         if (!Sdata.success) return false;
-        if (!GITHUB_CONFIG.token) initGitHubConfig();
+        
+        // Initialize GitHub config
+        await new Promise(resolve => {
+            chrome.storage.sync.get(['github_token', 'github_owner', 'github_repo', 'github_branch'], (data) => {
+                GITHUB_CONFIG.token = data.github_token;
+                GITHUB_CONFIG.owner = data.github_owner;
+                GITHUB_CONFIG.repo = data.github_repo;
+                GITHUB_CONFIG.branch = data.github_branch || 'main';
+                resolve();
+            });
+        });
+        
+        if (!GITHUB_CONFIG.token || !GITHUB_CONFIG.owner || !GITHUB_CONFIG.repo) {
+            console.error('GitHub configuration is incomplete');
+            alert('Please configure your GitHub settings by clicking on the extension icon');
+            return false;
+        }
 
         const commitMessage = `Solved: ${QUES}\n\n` +
             `Success: ${Sdata.success}\n` +
