@@ -1,0 +1,230 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  --bg-dark: #121212;
+  --bg-card: #1a1a1a;
+  --bg-input: #242424;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --accent: #646464;
+  --border: #3a3a3a;
+  --highlight: #4d4d4d;
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+
+body, html {
+  font-family: 'JetBrains Mono', monospace;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  height: 100%;
+  line-height: 1.5;
+}
+
+body {
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3C!-- Squiggly lines --%3E%3Cpath d='M10,50 Q30,30 50,50 T90,50 T130,50 T170,50 T210,50' stroke='rgba(255,255,255,0.1)' fill='none' stroke-width='2'/%3E%3Cpath d='M20,100 Q40,120 60,100 T100,100 T140,100 T180,100' stroke='rgba(255,255,255,0.08)' fill='none' stroke-width='2'/%3E%3C!-- Dots and small shapes --%3E%3Ccircle cx='250' cy='50' r='3' fill='rgba(255,255,255,0.15)'/%3E%3Ccircle cx='50' cy='150' r='2' fill='rgba(255,255,255,0.1)'/%3E%3Ccircle cx='150' cy='250' r='4' fill='rgba(255,255,255,0.12)'/%3E%3Crect x='200' y='200' width='4' height='4' fill='rgba(255,255,255,0.1)'/%3E%3C!-- Code-like symbols --%3E%3Cpath d='M220,80 L230,70 L240,80 L230,90 Z' fill='none' stroke='rgba(255,255,255,0.15)' stroke-width='1'/%3E%3Cpath d='M70,200 L65,205 L70,210 L75,205 Z' fill='none' stroke='rgba(255,255,255,0.12)' stroke-width='1'/%3E%3Cpath d='M120,40 L125,35 L130,40' stroke='rgba(255,255,255,0.1)' fill='none' stroke-width='1'/%3E%3C!-- Brackets and parentheses --%3E%3Cpath d='M190,130 Q180,150 190,170' stroke='rgba(255,255,255,0.13)' fill='none' stroke-width='1.5'/%3E%3Cpath d='M210,130 Q220,150 210,170' stroke='rgba(255,255,255,0.13)' fill='none' stroke-width='1.5'/%3E%3Cpath d='M30,230 L40,230' stroke='rgba(255,255,255,0.1)' fill='none' stroke-width='1.5'/%3E%3Cpath d='M280,100 L270,110 L280,120' stroke='rgba(255,255,255,0.08)' fill='none' stroke-width='1'/%3E%3C/svg%3E");
+  opacity: 0.25;
+  z-index: -1;
+  background-size: 500px 500px;
+  pointer-events: none;
+  animation: subtlePan 120s infinite linear;
+}
+
+@keyframes subtlePan {
+  from { background-position: 0 0; }
+  to { background-position: 500px 500px; }
+}
+
+.container {
+  width: 320px;
+  padding: 22px;
+  background-color: var(--bg-card);
+  box-shadow: 0 4px 12px var(--shadow);
+  border-radius: 6px;
+  margin: 0;
+  position: relative;
+  animation: fadeIn 0.3s ease-out;
+  border: 1px solid var(--border);
+}
+
+.logo-container {
+  text-align: center;
+  margin-bottom: 15px;
+  animation: fadeIn 0.4s ease forwards;
+  opacity: 0;
+  animation-delay: 0.05s;
+}
+
+.logo {
+  width: 80px;
+  height: auto;
+  filter: grayscale(1) brightness(0.9) contrast(1.2);
+  border-radius: 6px;
+  box-shadow: 0 2px 6px var(--shadow);
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+  filter: grayscale(0.7) brightness(1.1) contrast(1.2);
+}
+
+h1 {
+  font-size: 20px;
+  color: var(--text-primary);
+  margin-top: 0;
+  margin-bottom: 20px;
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  position: relative;
+  padding-bottom: 12px;
+}
+
+h1::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+.form-group {
+  margin-bottom: 18px;
+  position: relative;
+  animation: fadeIn 0.4s ease forwards;
+  opacity: 0;
+}
+
+.form-group:nth-child(1) { animation-delay: 0.1s; }
+.form-group:nth-child(2) { animation-delay: 0.2s; }
+.form-group:nth-child(3) { animation-delay: 0.3s; }
+.form-group:nth-child(4) { animation-delay: 0.4s; }
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+}
+
+input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  box-sizing: border-box;
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  transition: all 0.2s ease;
+}
+
+input::placeholder {
+  color: rgba(160, 160, 160, 0.5);
+}
+
+input:focus {
+  border-color: var(--highlight);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(77, 77, 77, 0.25);
+}
+
+a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+  border-bottom: 1px dotted var(--text-secondary);
+}
+
+a:hover {
+  color: var(--text-primary);
+}
+
+.button-group {
+  margin-top: 24px;
+  text-align: center;
+  animation: fadeIn 0.4s ease forwards;
+  animation-delay: 0.5s;
+  opacity: 0;
+}
+
+button {
+  background-color: var(--accent);
+  color: var(--text-primary);
+  border: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px var(--shadow);
+}
+
+button:hover {
+  background-color: var(--highlight);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px var(--shadow);
+}
+
+button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+#status-message {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  height: 20px;
+  transition: opacity 0.3s ease;
+  animation: fadeIn 0.4s ease forwards;
+  animation-delay: 0.6s;
+  opacity: 0;
+}
+
+.success {
+  color: #7cb342;
+}
+
+.error {
+  color: #e53935;
+}
+
+p {
+  color: var(--text-secondary);
+  margin: 6px 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
