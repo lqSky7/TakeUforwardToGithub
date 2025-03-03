@@ -1,6 +1,6 @@
 {
     "name": "TakeUForwardToGithub",
-    "version": "0.20",
+    "version": "1.0",
     "manifest_version": 3,
     "description": "Auto push takeuforward.org solutions to your github repo",
     "permissions": [
