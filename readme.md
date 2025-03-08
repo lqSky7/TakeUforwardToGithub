@@ -6,6 +6,8 @@
 
 ### **Safari Users** 🧭
 
+[▶️ Watch Safari Installation Video Tutorial](https://youtu.be/1dYI2wZfkJE?si=1Fk78wQvimInFo3Z)
+
 > **Note:** I cannot disable the unverified app warning without paying Apple for a developer account, but the app is completely safe. You can build it yourself or check network logs to confirm the extension shows no suspicious activity.
 
 1. Go to releases and download **`TakeUforwardToGithub.app.zip`**
@@ -25,9 +27,11 @@
 
 ## <u>Usage</u>
 
+[▶️ Watch Demo Video](https://youtu.be/rukpCwCx3x8?si=DEQCMEOlA9BnMU1X)
+
 1. **Open popup** and configure **user**, **repo**, and **token**
    > _Note: Make sure to check the "repo" scope while generating your token_
-   ![Project Banner](screenshots/check.png)
+   > ![Project Banner](screenshots/check.png)
 2. **Solve any problem** on the website
 3. When you click "**Submit**", your solution will be **automatically pushed** to GitHub
 
@@ -45,10 +49,6 @@ here's some ai generated readme.md for you.
 - **Multi-Content Support**: Handles code snippets, questions, and extra notes without breaking a sweat.
 - **Quick Setup**: Intuitive configuration for a frustration-free experience.
 - **Future-Proof**: Safari support is on the horizon. 🦊
-
-## <u>Usage</u>
-
-All you need is a Chromium-based browser. Once installed, configure your repository settings via the extension's homepage and let the magic unfold. Safari users, we’ve got you covered in the next update!
 
 ## <u>Example Workflow:</u>
 
