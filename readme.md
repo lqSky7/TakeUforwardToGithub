@@ -2,14 +2,43 @@
 
 ![Project Banner](assets/main.png)
 
-## Description
+## <u>Installation</u>
+
+### **Safari Users** 🧭
+
+> **Note:** I cannot disable the unverified app warning without paying Apple for a developer account, but the app is completely safe. You can build it yourself or check network logs to confirm the extension shows no suspicious activity.
+
+1. Go to releases and download **`TakeUforwardToGithub.app.zip`**
+2. **Extract** the zip file to your desired location
+3. Install **TakeUforwardToGithub.app** - you'll see an _"unverified app"_ warning, click **"Done"**
+4. Open **System Settings** and search for _"gatekeeper"_
+5. Click the **"Open Anyway"** button
+6. Open **Safari Settings** > **Advanced Settings** > Enable _"Show features for web developers"_
+7. Navigate to **Safari Settings** > **Developer** > Check _"Allow unsigned extensions"_ (Even though I have signed it, blame apple)
+8. Go to **Safari Settings** > **Extensions** > Enable the **TakeUforwardToGithub** extension
+9. Open the TakeUforward website, click the extension icon, and select **"Always allow on this website"**
+
+### **Chrome (and similar) Users** 🌐
+
+1. Open **Browser settings** > **extensions** > _"load unpacked"_
+2. Select the **unzipped repo directory**
+
+## <u>Usage</u>
+
+1. **Open popup** and configure **user**, **repo**, and **token**
+   > _Note: Make sure to check the "repo" scope while generating your token_
+   ![Project Banner](screenshots/check.png)
+2. **Solve any problem** on the website
+3. When you click "**Submit**", your solution will be **automatically pushed** to GitHub
+
+## <u>Description</u>
 
 I instantly missed leetsync and gfg to github after switching to tuf+. Decided to make a chrome extension but failed miserably. Over the rest of my first semester, i started learning webdev from chaicode, when i reached backend dev part, i
 realized i now have some confidence in porting gfg to github extension to tuf+. Long story short, Both leetsync and gfg to github use their apis in some way (to fetch question and stuff) and tuf+ platform (being a paid one) doesn't have clear open apis.
 So, the approach to this extension is completely different from leetsync and gfg to github. It fetches data from localstorage of tuf+ and scrapes stuff from the website (tailwind gives a lot of pain while scraping stuff). Thanks for coming to my ted talk,
 here's some ai generated readme.md for you.
 
-## Features 💡
+## <u>Features 💡</u>
 
 - **Effortless Integration**: Sync with takeuforward.org and TUF+ platforms like a pro.
 - **Automate the Boring Stuff**: Push questions, solutions, and more directly to your GitHub.
@@ -17,44 +46,30 @@ here's some ai generated readme.md for you.
 - **Quick Setup**: Intuitive configuration for a frustration-free experience.
 - **Future-Proof**: Safari support is on the horizon. 🦊
 
-## Installation 🛠️
-
-1. Clone this repository to your local machine:
-
-```bash
-   git clone https://github.com/lqsky7/TakeUforwardToGithub.git
-```
-
-2. Enable developer mode in Chrome (or any Chromium-based browser like Edge).
-   For Safari users, hang tight – it's coming soon!
-
-3. Load the unpacked extension:
-   Navigate to the repository's directory and select it as your extension source.
-
-## Usage
+## <u>Usage</u>
 
 All you need is a Chromium-based browser. Once installed, configure your repository settings via the extension's homepage and let the magic unfold. Safari users, we’ve got you covered in the next update!
 
-## Example Workflow:
+## <u>Example Workflow:</u>
 
 Open TUF+ and start solving questions.
 Watch as the extension scrapes and pushes content to your GitHub in real time.
 Click submit
 🎉 Profit!
 
-## Contributing
+## <u>Contributing</u>
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes. Extra points for memes! 😉
 
-## License
+## <u>License</u>
 
 This project is licensed under the Mozilla Public License 2.0. See the LICENSE file for details.
 
-## Images
+## <u>Images</u>
 
 ![Feature Screenshot](assets/screenshot.png)
 
-## Project Roadmap 🛣️
+## <u>Project Roadmap 🛣️</u>
 
 ### Completed ✅
 
@@ -63,8 +78,8 @@ This project is licensed under the Mozilla Public License 2.0. See the LICENSE f
 - [x] Popup interface for configuration
 - [x] Automatic code submission detection
 - [x] Custom directory structure based on problem paths
+- [x] Native Safari support (bane of my existence)
 - [ ] Add option to customize file naming patterns (maybe??)
-- [ ] Native Safari support (bane of my existence)
 - [ ] Dashboard to track submission statistics (maybe??)
 - [ ] Publish to Chrome Web Store (send 5$ pls)
 - [ ] Local backup of submissions (why? but sure)
