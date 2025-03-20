@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap");
 
 :root {
   --bg-dark: #121212;
@@ -12,8 +12,9 @@
   --shadow: rgba(0, 0, 0, 0.4);
 }
 
-body, html {
-  font-family: 'JetBrains Mono', monospace;
+body,
+html {
+  font-family: "JetBrains Mono", monospace;
   margin: 0;
   padding: 0;
   background-color: var(--bg-dark);
@@ -27,7 +28,7 @@ body {
 }
 
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
@@ -42,8 +43,12 @@ body::before {
 }
 
 @keyframes subtlePan {
-  from { background-position: 0 0; }
-  to { background-position: 500px 500px; }
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 500px 500px;
+  }
 }
 
 .container {
@@ -72,7 +77,9 @@ body::before {
   filter: grayscale(1) brightness(0.9) contrast(1.2);
   border-radius: 6px;
   box-shadow: 0 2px 6px var(--shadow);
-  transition: transform 0.3s ease, filter 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    filter 0.3s ease;
 }
 
 .logo:hover {
@@ -93,7 +100,7 @@ h1 {
 }
 
 h1::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 50%;
@@ -110,10 +117,18 @@ h1::after {
   opacity: 0;
 }
 
-.form-group:nth-child(1) { animation-delay: 0.1s; }
-.form-group:nth-child(2) { animation-delay: 0.2s; }
-.form-group:nth-child(3) { animation-delay: 0.3s; }
-.form-group:nth-child(4) { animation-delay: 0.4s; }
+.form-group:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.form-group:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.form-group:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.form-group:nth-child(4) {
+  animation-delay: 0.4s;
+}
 
 label {
   display: block;
@@ -133,7 +148,7 @@ input {
   box-sizing: border-box;
   background-color: var(--bg-input);
   color: var(--text-primary);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   transition: all 0.2s ease;
 }
 
@@ -175,7 +190,7 @@ button {
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-weight: 500;
   letter-spacing: 0.5px;
   box-shadow: 0 2px 4px var(--shadow);

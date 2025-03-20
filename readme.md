@@ -30,8 +30,7 @@
 [▶️ Watch Demo Video](https://youtu.be/rukpCwCx3x8?si=DEQCMEOlA9BnMU1X)
 
 1. **Open popup** and configure **user**, **repo**, and **token**
-   > _Note: Make sure to check the "repo" scope while generating your token_
-   > ![Project Banner](screenshots/check.png)
+   > _Note: Make sure to check the "repo" scope while generating your token_ > ![Project Banner](screenshots/check.png)
 2. **Solve any problem** on the website
 3. When you click "**Submit**", your solution will be **automatically pushed** to GitHub
 
