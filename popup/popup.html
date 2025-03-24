@@ -1,43 +1,66 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TakeUforwardToGithub</title>
-  <link rel="stylesheet" href="popup.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-</head>
-<body>
-  <div class="container">
-    <div class="logo-container">
-      <img src="../assets/120.png" alt="TakeUforwardToGithub" class="logo">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TakeUforwardToGithub</title>
+    <link rel="stylesheet" href="popup.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div class="logo-container">
+        <img src="../assets/120.png" alt="TakeUforwardToGithub" class="logo" />
+      </div>
+      <h1>TakeUforwardToGithub</h1>
+      <form id="github-config-form">
+        <div class="form-group">
+          <label for="github-token">GitHub Token:</label>
+          <input
+            type="password"
+            id="github-token"
+            placeholder="Personal access token"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="github-owner">GitHub Username:</label>
+          <input
+            type="text"
+            id="github-owner"
+            placeholder="Your GitHub username"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="github-repo">Repository Name:</label>
+          <input
+            type="text"
+            id="github-repo"
+            placeholder="Repository name"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="github-branch">Branch Name:</label>
+          <input
+            type="text"
+            id="github-branch"
+            placeholder="main"
+            value="main"
+          />
+        </div>
+        <div class="button-group">
+          <button type="submit" id="save-button">Save Settings</button>
+        </div>
+      </form>
+      <div id="status-message"></div>
     </div>
-    <h1>TakeUforwardToGithub</h1>
-    <form id="github-config-form">
-      <div class="form-group">
-        <label for="github-token">GitHub Token:</label>
-        <input type="password" id="github-token" placeholder="Personal access token" required>
-      </div>
-      <div class="form-group">
-        <label for="github-owner">GitHub Username:</label>
-        <input type="text" id="github-owner" placeholder="Your GitHub username" required>
-      </div>
-      <div class="form-group">
-        <label for="github-repo">Repository Name:</label>
-        <input type="text" id="github-repo" placeholder="Repository name" required>
-      </div>
-      <div class="form-group">
-        <label for="github-branch">Branch Name:</label>
-        <input type="text" id="github-branch" placeholder="main" value="main">
-      </div>
-      <div class="button-group">
-        <button type="submit" id="save-button">Save Settings</button>
-      </div>
-    </form>
-    <div id="status-message"></div>
-  </div>
-  <script src="popup.js"></script>
-</body>
+    <script src="popup.js"></script>
+  </body>
 </html>
