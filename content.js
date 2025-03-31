@@ -228,8 +228,11 @@ window.addEventListener("message", async (event) => {
   console.log("Received submission response");
   if (event.data.type === "SUBMISSION_RESPONSE") {
     const submissionData = event.data.payload;
+    console.log("Submission success status:", submissionData.success);
     if (submissionData.success === true) {
       await handleSubmissionPush(submissionData);
+    } else {
+      console.log("Submission was not successful. Not pushing to GitHub.");
     }
   }
 });
