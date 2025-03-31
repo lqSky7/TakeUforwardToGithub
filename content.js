@@ -1,31 +1,62 @@
 let QUES = "";
 let DESCRIPTION = "";
-//udca
-const pollForQuestion = setInterval(() => {
+let currentPathname = window.location.pathname;
+
+
+const fetchQuestionDetails = () => {
   const headingElem = document.querySelector(
     ".text-2xl.font-bold.text-new_primary.dark\\:text-new_dark_primary.relative",
   );
   const paragraphElem = document.querySelector("p.mt-6");
+  
   if (headingElem && paragraphElem) {
-    QUES = headingElem.textContent || "";
-    DESCRIPTION = paragraphElem.textContent || "";
+    QUES = headingElem.textContent?.trim() || "";
+    DESCRIPTION = paragraphElem.textContent?.trim() || "";
+    console.log("Question details fetched:", QUES);
+  }
+};
+
+
+const fetchLatestCodeData = () => {
+  const storedData = localStorage.getItem("storedData");
+  const parsedData = JSON.parse(storedData || "[]");
+  
+  if (parsedData.length > 0) {
+    const { problemSlug, selectedLanguage, publicCodeOfSelected } =
+      parsedData.at(-1);
+    PROBLEM_SLUG = problemSlug;
+    SELECTED_LANGUAGE = selectedLanguage;
+    PUBLIC_CODE = publicCodeOfSelected;
+    console.log("Latest code data fetched for language:", SELECTED_LANGUAGE);
+  }
+};
+
+
+const urlChangeDetector = setInterval(() => {
+  if (currentPathname !== window.location.pathname) {
+    console.log("Path changed from", currentPathname, "to", window.location.pathname);
+    currentPathname = window.location.pathname;
+    
+
+
+    setTimeout(() => {
+      fetchQuestionDetails();
+      fetchLatestCodeData();
+    }, 4000);
+  }
+}, 4000);
+
+
+const pollForQuestion = setInterval(() => {
+  fetchQuestionDetails();
+  if (QUES && DESCRIPTION) {
     clearInterval(pollForQuestion);
   }
-}, 2000);
+}, 1000);
 
-const storedData = localStorage.getItem("storedData");
-const parsedData = JSON.parse(storedData || "[]");
-let PROBLEM_SLUG = "";
-let SELECTED_LANGUAGE = "";
-let PUBLIC_CODE = "";
 
-if (parsedData.length > 0) {
-  const { problemSlug, selectedLanguage, publicCodeOfSelected } =
-    parsedData.at(-1);
-  PROBLEM_SLUG = problemSlug;
-  SELECTED_LANGUAGE = selectedLanguage;
-  PUBLIC_CODE = publicCodeOfSelected;
-}
+fetchLatestCodeData();
+
 
 const GITHUB_CONFIG = {
   token: "",
@@ -35,7 +66,7 @@ const GITHUB_CONFIG = {
 };
 
 const initGitHubConfig = () => {
-  // Use chrome.storage instead of localStorage
+
   chrome.storage.sync.get(
     ["github_token", "github_owner", "github_repo", "github_branch"],
     (data) => {
@@ -44,7 +75,7 @@ const initGitHubConfig = () => {
       GITHUB_CONFIG.repo = data.github_repo || "";
       GITHUB_CONFIG.branch = data.github_branch || "main";
 
-      // If any config is missing, inform the user to set it up in the popup
+
       if (!GITHUB_CONFIG.token || !GITHUB_CONFIG.owner || !GITHUB_CONFIG.repo) {
         alert(
           "Please configure your GitHub settings by clicking on the extension icon",
@@ -107,6 +138,10 @@ const handleSubmissionPush = async (Sdata) => {
     console.log("Handling submission push...");
     if (!Sdata.success) return false;
 
+    // Re-fetch latest question details and code before pushing
+    fetchQuestionDetails();
+    fetchLatestCodeData();
+    
     // Initialize GitHub config
     await new Promise((resolve) => {
       chrome.storage.sync.get(
@@ -214,3 +249,9 @@ function initSubmitButtonMonitor() {
 // Call initialization methods immediately
 injectInterceptor();
 initSubmitButtonMonitor();
+
+// Clean up intervals when the page is unloaded
+window.addEventListener('beforeunload', () => {
+  clearInterval(urlChangeDetector);
+  clearInterval(pollForQuestion);
+});
