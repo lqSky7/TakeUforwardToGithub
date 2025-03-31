@@ -18,7 +18,9 @@
         ) {
           const response = JSON.parse(this.responseText);
           const submissionData = {
-            success: response.failedTestCase ? response.failedTestCase.success : false,
+            success: response.failedTestCase
+              ? response.failedTestCase.success
+              : false,
             totalTestCases: response.failedTestCase?.totalTestCases || 0,
             results: (response.results || []).map((result) => ({
               time: parseFloat(result.time),
