@@ -2,13 +2,12 @@ let QUES = "";
 let DESCRIPTION = "";
 let currentPathname = window.location.pathname;
 
-
 const fetchQuestionDetails = () => {
   const headingElem = document.querySelector(
     ".text-2xl.font-bold.text-new_primary.dark\\:text-new_dark_primary.relative",
   );
   const paragraphElem = document.querySelector("p.mt-6");
-  
+
   if (headingElem && paragraphElem) {
     QUES = headingElem.textContent?.trim() || "";
     DESCRIPTION = paragraphElem.textContent?.trim() || "";
@@ -16,11 +15,10 @@ const fetchQuestionDetails = () => {
   }
 };
 
-
 const fetchLatestCodeData = () => {
   const storedData = localStorage.getItem("storedData");
   const parsedData = JSON.parse(storedData || "[]");
-  
+
   if (parsedData.length > 0) {
     const { problemSlug, selectedLanguage, publicCodeOfSelected } =
       parsedData.at(-1);
@@ -31,13 +29,15 @@ const fetchLatestCodeData = () => {
   }
 };
 
-
 const urlChangeDetector = setInterval(() => {
   if (currentPathname !== window.location.pathname) {
-    console.log("Path changed from", currentPathname, "to", window.location.pathname);
+    console.log(
+      "Path changed from",
+      currentPathname,
+      "to",
+      window.location.pathname,
+    );
     currentPathname = window.location.pathname;
-    
-
 
     setTimeout(() => {
       fetchQuestionDetails();
@@ -46,7 +46,6 @@ const urlChangeDetector = setInterval(() => {
   }
 }, 4000);
 
-
 const pollForQuestion = setInterval(() => {
   fetchQuestionDetails();
   if (QUES && DESCRIPTION) {
@@ -54,9 +53,7 @@ const pollForQuestion = setInterval(() => {
   }
 }, 1000);
 
-
 fetchLatestCodeData();
-
 
 const GITHUB_CONFIG = {
   token: "",
@@ -66,7 +63,6 @@ const GITHUB_CONFIG = {
 };
 
 const initGitHubConfig = () => {
-
   chrome.storage.sync.get(
     ["github_token", "github_owner", "github_repo", "github_branch"],
     (data) => {
@@ -74,7 +70,6 @@ const initGitHubConfig = () => {
       GITHUB_CONFIG.owner = data.github_owner || "";
       GITHUB_CONFIG.repo = data.github_repo || "";
       GITHUB_CONFIG.branch = data.github_branch || "main";
-
 
       if (!GITHUB_CONFIG.token || !GITHUB_CONFIG.owner || !GITHUB_CONFIG.repo) {
         alert(
@@ -141,7 +136,7 @@ const handleSubmissionPush = async (Sdata) => {
     // Re-fetch latest question details and code before pushing
     fetchQuestionDetails();
     fetchLatestCodeData();
-    
+
     // Initialize GitHub config
     await new Promise((resolve) => {
       chrome.storage.sync.get(
@@ -254,7 +249,7 @@ injectInterceptor();
 initSubmitButtonMonitor();
 
 // Clean up intervals when the page is unloaded
-window.addEventListener('beforeunload', () => {
+window.addEventListener("beforeunload", () => {
   clearInterval(urlChangeDetector);
   clearInterval(pollForQuestion);
 });
