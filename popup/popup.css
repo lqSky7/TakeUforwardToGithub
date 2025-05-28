@@ -75,6 +75,60 @@ html {
   animation: unblurIn var(--unblur-duration) var(--unblur-easing);
 }
 
+/* Support Section in Help Tab */
+.support-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.support-description {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.support-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  padding: 10px 16px;
+  border-radius: var(--radius-small);
+  border: 1px solid var(--border-default);
+  background: var(--bg-overlay);
+  letter-spacing: 0.01em;
+}
+
+.support-link:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border-color: var(--accent-primary);
+  transform: translateY(-1px);
+}
+
+.support-text {
+  flex: 1;
+  text-align: center;
+}
+
+.support-arrow {
+  font-size: 10px;
+  color: var(--accent-secondary);
+  transition: transform var(--transition-fast);
+}
+
+.support-link:hover .support-arrow {
+  transform: translateX(2px);
+}
+
+
 @keyframes unblurIn {
   from {
     filter: blur(10px);
