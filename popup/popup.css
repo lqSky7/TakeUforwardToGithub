@@ -726,74 +726,7 @@ html {
   font-weight: 500;
 }
 
-/* Toast Notifications */
-.toast-container {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 1001;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
 
-.toast {
-  padding: 12px 16px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-medium);
-  box-shadow: var(--shadow-medium);
-  color: var(--text-primary);
-  font-size: 11px;
-  max-width: 300px;
-  animation: toastUnblur 0.3s var(--unblur-easing);
-  position: relative;
-  overflow: hidden;
-}
-
-.toast.success {
-  border-left: 3px solid var(--success);
-}
-
-.toast.error {
-  border-left: 3px solid var(--error);
-}
-
-.toast.warning {
-  border-left: 3px solid var(--warning);
-}
-
-.toast.info {
-  border-left: 3px solid var(--info);
-}
-
-@keyframes toastUnblur {
-  from {
-    filter: blur(8px);
-    opacity: 0;
-    transform: translateX(100%) scale(0.9);
-  }
-  to {
-    filter: blur(0px);
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
-
-.toast::before {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  background: var(--accent-primary);
-  animation: toastProgress 3s linear;
-}
-
-@keyframes toastProgress {
-  from { width: 100%; }
-  to { width: 0%; }
-}
 
 /* Scrollbar */
 ::-webkit-scrollbar {
