@@ -100,10 +100,10 @@ class PopupController {
       this.populateFormFields();
       this.updateConnectionStatus();
       this.preloadStatusData();
-    } catch (error) {
-      this.showToast('Failed to load configuration', 'error');
-      console.error('Failed to load config:', error);
-    }
+    this.updateAnalytics(data);
+  } catch (error) {
+    console.error('Failed to load config:', error);
+  }
   }
 
   populateFormFields() {
@@ -224,7 +224,6 @@ class PopupController {
     const formData = this.collectFormData();
     
     if (!this.validateAllFields(formData)) {
-      this.showToast('Please fix validation errors', 'error');
       return;
     }
 
@@ -239,14 +238,12 @@ class PopupController {
       });
 
       this.config = formData;
-      this.showToast('Configuration saved successfully', 'success');
       this.updateConnectionStatus();
       
       // Auto-test connection after save
       setTimeout(() => this.testConnection(), 1000);
       
     } catch (error) {
-      this.showToast('Failed to save configuration', 'error');
       console.error('Save error:', error);
     } finally {
       this.showLoadingState(false);
@@ -282,7 +279,6 @@ class PopupController {
     const formData = this.collectFormData();
     
     if (!formData.token || !formData.owner || !formData.repo) {
-      this.showToast('Please fill in all required fields first', 'warning');
       return;
     }
 
@@ -306,7 +302,6 @@ class PopupController {
         
         this.isConnected = true;
         this.updateConnectionStatus(true);
-        this.showToast(`Connection successful! Found ${commitCount} commits`, 'success');
         
         // Update stored data
         const newData = {
@@ -338,7 +333,6 @@ class PopupController {
     } catch (error) {
       this.isConnected = false;
       this.updateConnectionStatus(false);
-      this.showToast(`Connection failed: ${error.message}`, 'error');
     } finally {
       this.showLoadingState(false);
     }
@@ -614,39 +608,7 @@ class PopupController {
     }
   }
 
-  showToast(message, type = 'info', duration = 3000) {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    
-    container.appendChild(toast);
-    
-    // Auto-remove after duration
-    setTimeout(() => {
-      toast.style.filter = 'blur(5px)';
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(100%) scale(0.9)';
-      setTimeout(() => {
-        if (toast.parentNode) {
-          toast.parentNode.removeChild(toast);
-        }
-      }, 300);
-    }, duration);
-    
-    // Click to dismiss
-    toast.addEventListener('click', () => {
-      toast.style.filter = 'blur(5px)';
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(100%) scale(0.9)';
-      setTimeout(() => {
-        if (toast.parentNode) {
-          toast.parentNode.removeChild(toast);
-        }
-      }, 300);
-    });
-  }
+
 
   updateVersionInfo() {
     // Get version from manifest if available
