@@ -66,7 +66,11 @@ This project is licensed under the Mozilla Public License 2.0. See the LICENSE f
 
 ## <u>Images</u>
 
-![Feature Screenshot](assets/screenshot.png)
+![Extension Configuration](assets/1.png)
+
+![TakeUforward Integration](assets/2.png)
+
+![GitHub Repository](assets/3.png)
 
 ## <u>Project Roadmap 🛣️</u>
 
@@ -83,7 +87,7 @@ This project is licensed under the Mozilla Public License 2.0. See the LICENSE f
 - [ ] Publish to Chrome Web Store (send 5$ pls)
 - [ ] Local backup of submissions (why? but sure)
 
-_Last updated: [March 2025]_
+_Last updated: [June 2025]_
 
 ### Notes
 
