@@ -2,6 +2,10 @@ let QUES = "";
 let DESCRIPTION = "";
 let currentPathname = window.location.pathname;
 
+// Time tracking variables
+let sessionStartTime = null;
+let lastActivityTime = Date.now();
+
 const fetchQuestionDetails = () => {
   const headingElem = document.querySelector(
     ".text-2xl.font-bold.text-new_primary.dark\\:text-new_dark_primary.relative",
@@ -80,6 +84,49 @@ const initGitHubConfig = () => {
     },
   );
 };
+
+// Time tracking functions
+const startTimeTracking = () => {
+  sessionStartTime = Date.now();
+  chrome.storage.sync.set({ last_session_start: new Date().toISOString() });
+  console.log("Started tracking time on TakeUforward");
+};
+
+const updateTimeTracking = () => {
+  if (sessionStartTime) {
+    const sessionDuration = Math.floor((Date.now() - sessionStartTime) / 60000); // in minutes
+    chrome.storage.sync.get(['takeuforward_time'], (data) => {
+      const currentTime = data.takeuforward_time || 0;
+      const newTotalTime = currentTime + sessionDuration;
+      chrome.storage.sync.set({ 
+        takeuforward_time: newTotalTime,
+        last_activity: new Date().toISOString()
+      });
+    });
+    sessionStartTime = Date.now(); // Reset session start
+  }
+};
+
+const handleUserActivity = () => {
+  lastActivityTime = Date.now();
+  if (!sessionStartTime) {
+    startTimeTracking();
+  }
+};
+
+// Track user activity
+document.addEventListener('click', handleUserActivity);
+document.addEventListener('keypress', handleUserActivity);
+document.addEventListener('scroll', handleUserActivity);
+document.addEventListener('mousemove', handleUserActivity);
+
+// Update time every 5 minutes if user is active
+setInterval(() => {
+  const timeSinceLastActivity = Date.now() - lastActivityTime;
+  if (timeSinceLastActivity < 300000) { // 5 minutes
+    updateTimeTracking();
+  }
+}, 300000);
 
 const createOrUpdateFile = async (filePath, content, commitMessage) => {
   try {
@@ -248,9 +295,11 @@ function initSubmitButtonMonitor() {
 // Call initialization methods immediately
 injectInterceptor();
 initSubmitButtonMonitor();
+startTimeTracking();
 
 // Clean up intervals when the page is unloaded
 window.addEventListener("beforeunload", () => {
   clearInterval(urlChangeDetector);
   clearInterval(pollForQuestion);
+  updateTimeTracking(); // Save time before leaving
 });
