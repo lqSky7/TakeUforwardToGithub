@@ -8,59 +8,239 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
     <div class="container">
-      <div class="logo-container">
-        <img src="../assets/120.png" alt="TakeUforwardToGithub" class="logo" />
-      </div>
-      <h1>TakeUforwardToGithub</h1>
-      <form id="github-config-form">
-        <div class="form-group">
-          <label for="github-token">GitHub Token:</label>
-          <input
-            type="password"
-            id="github-token"
-            placeholder="Personal access token"
-            required
-          />
+
+
+      <!-- Header Section -->
+      <header class="header">
+        <div class="logo-section">
+          <img src="../assets/120.png" alt="TakeUforwardToGithub" class="logo" />
+          <div class="title-section">
+            <h1>TakeUforward</h1>
+            <span class="subtitle">GitHub Bridge</span>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="github-owner">GitHub Username:</label>
-          <input
-            type="text"
-            id="github-owner"
-            placeholder="Your GitHub username"
-            required
-          />
+        <div class="status-indicator" id="connection-status">
+          <div class="status-dot"></div>
+          <span class="status-text">Not Connected</span>
         </div>
-        <div class="form-group">
-          <label for="github-repo">Repository Name:</label>
-          <input
-            type="text"
-            id="github-repo"
-            placeholder="Repository name"
-            required
-          />
+      </header>
+
+      <!-- Navigation Tabs -->
+      <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="config">Configuration</button>
+        <button class="tab-btn" data-tab="status">Status</button>
+        <button class="tab-btn" data-tab="help">Help</button>
+      </nav>
+
+      <!-- Configuration Tab -->
+      <section class="tab-content active" id="config-tab">
+        <form id="github-config-form" class="config-form">
+          <!-- Authentication Section -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <span class="section-icon">🔐</span>
+              Authentication
+            </h3>
+            <div class="form-group">
+              <label for="github-token" class="field-label">
+                Personal Access Token
+                <span class="required">*</span>
+              </label>
+              <div class="input-wrapper">
+                <input
+                  type="password"
+                  id="github-token"
+                  class="field-input"
+                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                  required
+                />
+                <button type="button" class="toggle-password" id="toggle-token">
+                  <span class="toggle-icon">👁</span>
+                </button>
+              </div>
+              <div class="field-help">
+                <a href="https://github.com/settings/tokens/new" target="_blank" class="help-link">
+                  → Generate new token
+                </a>
+                <span class="help-text">Requires: repo, workflow permissions</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Repository Section -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <span class="section-icon">📁</span>
+              Repository
+            </h3>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="github-owner" class="field-label">
+                  Username
+                  <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="github-owner"
+                  class="field-input"
+                  placeholder="your-username"
+                  required
+                />
+              </div>
+              <div class="form-group flex-1">
+                <label for="github-repo" class="field-label">
+                  Repository
+                  <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="github-repo"
+                  class="field-input"
+                  placeholder="my-solutions"
+                  required
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="github-branch" class="field-label">Branch</label>
+              <select id="github-branch" class="field-select">
+                <option value="main">main</option>
+                <option value="master">master</option>
+                <option value="solutions">solutions</option>
+                <option value="custom">Custom...</option>
+              </select>
+              <input
+                type="text"
+                id="custom-branch"
+                class="field-input hidden"
+                placeholder="feature/new-branch"
+              />
+            </div>
+          </div>
+
+          <!-- Validation Messages -->
+          <div class="validation-section" id="validation-messages"></div>
+
+          <!-- Action Buttons -->
+          <div class="action-section">
+            <button type="button" class="btn btn-secondary" id="test-connection">
+              <span class="btn-icon">🔗</span>
+              Test Connection
+            </button>
+            <button type="submit" class="btn btn-primary" id="save-config">
+              <span class="btn-icon">💾</span>
+              Save Configuration
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Status Tab -->
+      <section class="tab-content" id="status-tab">
+        <div class="status-section">
+          <div class="status-card">
+            <h3 class="status-title">Connection Status</h3>
+            <div class="status-details" id="status-details">
+              <div class="status-item">
+                <span class="status-label">GitHub API:</span>
+                <span class="status-value" id="api-status">Unknown</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Repository:</span>
+                <span class="status-value" id="repo-status">Unknown</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Last Sync:</span>
+                <span class="status-value" id="last-sync">Never</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="stats-section">
+            <h3 class="stats-title">Analytics</h3>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-value" id="time-spent">0h 0m</span>
+                <span class="stat-label">Time on TakeUforward</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-value" id="commit-count">-</span>
+                <span class="stat-label">Total Commits</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="github-branch">Branch Name:</label>
-          <input
-            type="text"
-            id="github-branch"
-            placeholder="main"
-            value="main"
-          />
+      </section>
+
+      <!-- Help Tab -->
+      <section class="tab-content" id="help-tab">
+        <div class="help-section">
+          <div class="help-card">
+            <h3 class="help-title">Quick Setup</h3>
+            <ol class="help-steps">
+              <li>Create a GitHub repository for your solutions</li>
+              <li>Generate a personal access token with repo permissions</li>
+              <li>Enter your credentials in the Configuration tab</li>
+              <li>Test the connection to verify setup</li>
+              <li>Start solving problems on TakeUforward!</li>
+            </ol>
+          </div>
+          
+          <div class="help-card">
+            <h3 class="help-title">Troubleshooting</h3>
+            <div class="help-content">
+              <details class="help-detail">
+                <summary>Token not working?</summary>
+                <p>Ensure your token has <code>repo</code> and <code>workflow</code> permissions. Check if the token is expired.</p>
+              </details>
+              <details class="help-detail">
+                <summary>Repository not found?</summary>
+                <p>Verify the repository exists and you have push access. Check the username and repository name spelling.</p>
+              </details>
+              <details class="help-detail">
+                <summary>Solutions not syncing?</summary>
+                <p>Check the Status tab for connection issues. Ensure you're logged into TakeUforward.</p>
+              </details>
+            </div>
+          </div>
+          
+          <div class="help-card">
+            <h3 class="help-title">Support</h3>
+            <div class="support-section">
+              <p class="support-description">Help us improve this extension by starring the repository on GitHub.</p>
+              <a href="https://github.com/lqSky7/TakeUforwardToGithub" target="_blank" class="support-link">
+                <span class="support-text">Star the repository</span>
+                <span class="support-arrow">→</span>
+              </a>
+            </div>
+          </div>
         </div>
-        <div class="button-group">
-          <button type="submit" id="save-button">Save Settings</button>
+      </section>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="footer-info">
+          <span class="version">v2.0.0</span>
+          <span class="separator">•</span>
+          <span class="privacy">Privacy: Local storage only</span>
         </div>
-      </form>
-      <div id="status-message"></div>
+      </footer>
     </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loading-overlay">
+      <div class="loading-spinner"></div>
+      <span class="loading-text">Connecting...</span>
+    </div>
+
+
+
     <script src="popup.js"></script>
   </body>
 </html>
