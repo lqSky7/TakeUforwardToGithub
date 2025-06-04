@@ -6,6 +6,27 @@ let currentPathname = window.location.pathname;
 let sessionStartTime = null;
 let lastActivityTime = Date.now();
 
+// Initialize logger
+let logger = {
+  enabled: false,
+  log: (...args) => { if (logger.enabled) console.log(...args); },
+  error: (...args) => { if (logger.enabled) console.error(...args); },
+  warn: (...args) => { if (logger.enabled) console.warn(...args); },
+  info: (...args) => { if (logger.enabled) console.info(...args); }
+};
+
+// Load developer mode setting
+chrome.storage.sync.get(['developer_mode'], (data) => {
+  logger.enabled = data.developer_mode || false;
+});
+
+// Listen for developer mode changes
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'setDeveloperMode') {
+    logger.enabled = message.enabled;
+  }
+});
+
 const fetchQuestionDetails = () => {
   const headingElem = document.querySelector(
     ".text-2xl.font-bold.text-new_primary.dark\\:text-new_dark_primary.relative",
@@ -16,7 +37,7 @@ const fetchQuestionDetails = () => {
   if (headingElem && paragraphElem) {
     QUES = headingElem.textContent?.trim() || "";
     DESCRIPTION = paragraphElem.textContent?.trim() || "";
-    console.log("Question details fetched:", QUES);
+    logger.log("Question details fetched:", QUES);
   }
 };
 
@@ -30,13 +51,13 @@ const fetchLatestCodeData = () => {
     PROBLEM_SLUG = problemSlug;
     SELECTED_LANGUAGE = selectedLanguage;
     PUBLIC_CODE = publicCodeOfSelected;
-    console.log("Latest code data fetched for language:", SELECTED_LANGUAGE);
+    logger.log("Latest code data fetched for language:", SELECTED_LANGUAGE);
   }
 };
 
 const urlChangeDetector = setInterval(() => {
   if (currentPathname !== window.location.pathname) {
-    console.log(
+    logger.log(
       "Path changed from",
       currentPathname,
       "to",
@@ -88,7 +109,7 @@ const initGitHubConfig = () => {
       NOTION_CONFIG.page = data.notion_page || "";
       NOTION_CONFIG.databaseId = data.notion_database_id || "";
 
-      console.log("Loaded config:", { GITHUB_CONFIG, NOTION_CONFIG });
+      logger.log("Loaded config:", { GITHUB_CONFIG, NOTION_CONFIG });
 
       if (!GITHUB_CONFIG.token || !GITHUB_CONFIG.owner || !GITHUB_CONFIG.repo) {
         alert(
@@ -103,7 +124,7 @@ const initGitHubConfig = () => {
 const startTimeTracking = () => {
   sessionStartTime = Date.now();
   chrome.storage.sync.set({ last_session_start: new Date().toISOString() });
-  console.log("Started tracking time on TakeUforward");
+  logger.log("Started tracking time on TakeUforward");
 };
 
 const updateTimeTracking = () => {
@@ -144,7 +165,7 @@ setInterval(() => {
 
 const createOrUpdateFile = async (filePath, content, commitMessage) => {
   try {
-    console.log("Creating/updating file...");
+    logger.log("Creating/updating file...");
     const response = await fetch(
       `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filePath}`,
       {
@@ -182,17 +203,17 @@ const createOrUpdateFile = async (filePath, content, commitMessage) => {
     if (!updateResponse.ok) {
       throw new Error(`GitHub API responded with ${updateResponse.status}`);
     }
-    console.log("File successfully created/updated!");
+    logger.log("File successfully created/updated!");
     return true;
   } catch (error) {
-    console.error("Error creating/updating file:", error);
+    logger.error("Error creating/updating file:", error);
     return false;
   }
 };
 
 const handleSubmissionPush = async (Sdata) => {
   try {
-    console.log("Handling submission push...");
+    logger.log("Handling submission push...");
     if (!Sdata.success) return false;
 
     // Re-fetch latest question details and code before pushing
@@ -214,14 +235,14 @@ const handleSubmissionPush = async (Sdata) => {
           NOTION_CONFIG.page = data.notion_page || "";
           NOTION_CONFIG.databaseId = data.notion_database_id || "";
           
-          console.log("Refreshed config for submission:", { GITHUB_CONFIG, NOTION_CONFIG });
+          logger.log("Refreshed config for submission:", { GITHUB_CONFIG, NOTION_CONFIG });
           resolve();
         },
       );
     });
 
     if (!GITHUB_CONFIG.token || !GITHUB_CONFIG.owner || !GITHUB_CONFIG.repo) {
-      console.error("GitHub configuration is incomplete");
+      logger.error("GitHub configuration is incomplete");
       alert(
         "Please configure your GitHub settings by clicking on the extension icon",
       );
@@ -270,24 +291,24 @@ ${PUBLIC_CODE}`;
     );
 
     if (success) {
-      console.log("Successfully pushed to GitHub!");
+      logger.log("Successfully pushed to GitHub!");
       
       // Debug Notion config
-      console.log("Notion config:", NOTION_CONFIG);
+      logger.log("Notion config:", NOTION_CONFIG);
       
       // Push to Notion if enabled
       if (NOTION_CONFIG.enabled) {
-        console.log("Notion is enabled, pushing to Notion...");
+        logger.log("Notion is enabled, pushing to Notion...");
         await pushToNotion();
       } else {
-        console.log("Notion is disabled or not configured");
+        logger.log("Notion is disabled or not configured");
       }
     } else {
-      console.error("Failed to push to GitHub");
+      logger.error("Failed to push to GitHub");
     }
     return success;
   } catch (error) {
-    console.error("Error in GitHub push:", error);
+    logger.error("Error in GitHub push:", error);
     return false;
   }
 };
@@ -300,14 +321,14 @@ const injectInterceptor = () => {
 };
 
 window.addEventListener("message", async (event) => {
-  console.log("Received submission response");
+  logger.log("Received submission response");
   if (event.data.type === "SUBMISSION_RESPONSE") {
     const submissionData = event.data.payload;
-    console.log("Submission success status:", submissionData.success);
+    logger.log("Submission success status:", submissionData.success);
     if (submissionData.success === true) {
       await handleSubmissionPush(submissionData);
     } else {
-      console.log("Submission was not successful. Not pushing to GitHub.");
+      logger.log("Submission was not successful. Not pushing to GitHub.");
     }
   }
 });
@@ -319,14 +340,14 @@ function initSubmitButtonMonitor() {
     );
     if (submitBtn) {
       submitBtn.addEventListener("click", () => {
-        console.log("Submit button clicked");
+        logger.log("Submit button clicked");
       });
     }
   });
 }
 const pushToNotion = async () => {
   if (!NOTION_CONFIG.enabled || !NOTION_CONFIG.token || !NOTION_CONFIG.databaseId) {
-    console.log('Notion not configured properly:', {
+    logger.log('Notion not configured properly:', {
       enabled: NOTION_CONFIG.enabled,
       hasToken: !!NOTION_CONFIG.token,
       hasDatabaseId: !!NOTION_CONFIG.databaseId,
@@ -360,14 +381,14 @@ const pushToNotion = async () => {
     });
 
     if (response.success) {
-      console.log('Problem added to Notion successfully');
+      logger.log('Problem added to Notion successfully');
       return true;
     } else {
-      console.error('Failed to add problem to Notion:', response.error);
+      logger.error('Failed to add problem to Notion:', response.error);
       return false;
     }
   } catch (error) {
-    console.error('Error adding problem to Notion:', error);
+    logger.error('Error adding problem to Notion:', error);
     return false;
   }
 };

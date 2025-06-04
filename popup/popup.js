@@ -8,6 +8,7 @@ class PopupController {
     this.debounceTimers = {};
     this.statusDataLoaded = false;
     this.statusData = {};
+    this.developerMode = false;
     
     this.initializeEventListeners();
     this.initializeValidators();
@@ -47,6 +48,11 @@ class PopupController {
     // Notion toggle
     document.getElementById('notion-enabled').addEventListener('change', (e) => {
       this.toggleNotionConfig(e.target.checked);
+    });
+
+    // Developer mode toggle
+    document.getElementById('developer-mode').addEventListener('change', (e) => {
+      this.setDeveloperMode(e.target.checked);
     });
 
     // Create Notion database button
@@ -114,7 +120,7 @@ class PopupController {
       const data = await chrome.storage.sync.get([
         'github_token', 'github_owner', 'github_repo', 'github_branch',
         'notion_enabled', 'notion_token', 'notion_page', 'notion_database_id',
-        'last_sync', 'takeuforward_time', 'last_activity', 'repo_info'
+        'developer_mode', 'last_sync', 'takeuforward_time', 'last_activity', 'repo_info'
       ]);
 
       this.config = {
@@ -130,6 +136,8 @@ class PopupController {
         page: data.notion_page || '',
         databaseId: data.notion_database_id || ''
       };
+
+      this.developerMode = data.developer_mode || false;
 
       // Store status data for later use
       this.statusData = data;
@@ -165,6 +173,10 @@ class PopupController {
     document.getElementById('notion-token').value = this.notionConfig.token;
     document.getElementById('notion-page').value = this.notionConfig.page;
     this.toggleNotionConfig(this.notionConfig.enabled);
+
+    // Populate developer mode
+    document.getElementById('developer-mode').checked = this.developerMode;
+    this.setDeveloperMode(this.developerMode);
   }
 
   initializeUI() {
@@ -280,7 +292,8 @@ class PopupController {
         github_branch: formData.branch,
         notion_enabled: formData.notionEnabled,
         notion_token: formData.notionToken,
-        notion_page: formData.notionPage
+        notion_page: formData.notionPage,
+        developer_mode: formData.developerMode
       };
 
       await chrome.storage.sync.set(saveData);
@@ -316,7 +329,8 @@ class PopupController {
       branch: branchSelect.value === 'custom' ? customBranch.value.trim() : branchSelect.value,
       notionEnabled: document.getElementById('notion-enabled').checked,
       notionToken: document.getElementById('notion-token').value.trim(),
-      notionPage: document.getElementById('notion-page').value.trim()
+      notionPage: document.getElementById('notion-page').value.trim(),
+      developerMode: document.getElementById('developer-mode').checked
     };
   }
 
@@ -803,6 +817,25 @@ class PopupController {
     if (validationDiv) {
       validationDiv.innerHTML = '';
     }
+  }
+
+  setDeveloperMode(enabled) {
+    this.developerMode = enabled;
+    // Send message to all scripts to enable/disable logging
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach(tab => {
+        chrome.tabs.sendMessage(tab.id, {
+          action: 'setDeveloperMode',
+          enabled: enabled
+        }).catch(() => {}); // Ignore errors for tabs that don't have our content script
+      });
+    });
+    
+    // Also send to background script
+    chrome.runtime.sendMessage({
+      action: 'setDeveloperMode',
+      enabled: enabled
+    }).catch(() => {});
   }
 
   updateVersionInfo() {
