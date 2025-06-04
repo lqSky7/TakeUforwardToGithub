@@ -6,27 +6,6 @@ let currentPathname = window.location.pathname;
 let sessionStartTime = null;
 let lastActivityTime = Date.now();
 
-// Initialize logger
-let logger = {
-  enabled: false,
-  log: (...args) => { if (logger.enabled) console.log(...args); },
-  error: (...args) => { if (logger.enabled) console.error(...args); },
-  warn: (...args) => { if (logger.enabled) console.warn(...args); },
-  info: (...args) => { if (logger.enabled) console.info(...args); }
-};
-
-// Load developer mode setting
-chrome.storage.sync.get(['developer_mode'], (data) => {
-  logger.enabled = data.developer_mode || false;
-});
-
-// Listen for developer mode changes
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'setDeveloperMode') {
-    logger.enabled = message.enabled;
-  }
-});
-
 const fetchQuestionDetails = () => {
   const headingElem = document.querySelector(
     ".text-2xl.font-bold.text-new_primary.dark\\:text-new_dark_primary.relative",
@@ -37,7 +16,7 @@ const fetchQuestionDetails = () => {
   if (headingElem && paragraphElem) {
     QUES = headingElem.textContent?.trim() || "";
     DESCRIPTION = paragraphElem.textContent?.trim() || "";
-    logger.log("Question details fetched:", QUES);
+    console.log("Question details fetched:", QUES);
   }
 };
 
@@ -51,13 +30,13 @@ const fetchLatestCodeData = () => {
     PROBLEM_SLUG = problemSlug;
     SELECTED_LANGUAGE = selectedLanguage;
     PUBLIC_CODE = publicCodeOfSelected;
-    logger.log("Latest code data fetched for language:", SELECTED_LANGUAGE);
+    console.log("Latest code data fetched for language:", SELECTED_LANGUAGE);
   }
 };
 
 const urlChangeDetector = setInterval(() => {
   if (currentPathname !== window.location.pathname) {
-    logger.log(
+    console.log(
       "Path changed from",
       currentPathname,
       "to",
@@ -109,7 +88,7 @@ const initGitHubConfig = () => {
       NOTION_CONFIG.page = data.notion_page || "";
       NOTION_CONFIG.databaseId = data.notion_database_id || "";
 
-      logger.log("Loaded config:", { GITHUB_CONFIG, NOTION_CONFIG });
+      console.log("Loaded config:", { GITHUB_CONFIG, NOTION_CONFIG });
 
       if (!GITHUB_CONFIG.token || !GITHUB_CONFIG.owner || !GITHUB_CONFIG.repo) {
         alert(
@@ -124,7 +103,7 @@ const initGitHubConfig = () => {
 const startTimeTracking = () => {
   sessionStartTime = Date.now();
   chrome.storage.sync.set({ last_session_start: new Date().toISOString() });
-  logger.log("Started tracking time on TakeUforward");
+  console.log("Started tracking time on TakeUforward");
 };
 
 const updateTimeTracking = () => {
@@ -165,7 +144,7 @@ setInterval(() => {
 
 const createOrUpdateFile = async (filePath, content, commitMessage) => {
   try {
-    logger.log("Creating/updating file...");
+    console.log("Creating/updating file...");
     const response = await fetch(
       `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filePath}`,
       {
@@ -203,17 +182,17 @@ const createOrUpdateFile = async (filePath, content, commitMessage) => {
     if (!updateResponse.ok) {
       throw new Error(`GitHub API responded with ${updateResponse.status}`);
     }
-    logger.log("File successfully created/updated!");
+    console.log("File successfully created/updated!");
     return true;
   } catch (error) {
-    logger.error("Error creating/updating file:", error);
+    console.error("Error creating/updating file:", error);
     return false;
   }
 };
 
 const handleSubmissionPush = async (Sdata) => {
   try {
-    logger.log("Handling submission push...");
+    console.log("Handling submission push...");
     if (!Sdata.success) return false;
 
     // Re-fetch latest question details and code before pushing
@@ -235,14 +214,14 @@ const handleSubmissionPush = async (Sdata) => {
           NOTION_CONFIG.page = data.notion_page || "";
           NOTION_CONFIG.databaseId = data.notion_database_id || "";
           
-          logger.log("Refreshed config for submission:", { GITHUB_CONFIG, NOTION_CONFIG });
+          console.log("Refreshed config for submission:", { GITHUB_CONFIG, NOTION_CONFIG });
           resolve();
         },
       );
     });
 
     if (!GITHUB_CONFIG.token || !GITHUB_CONFIG.owner || !GITHUB_CONFIG.repo) {
-      logger.error("GitHub configuration is incomplete");
+      console.error("GitHub configuration is incomplete");
       alert(
         "Please configure your GitHub settings by clicking on the extension icon",
       );
@@ -291,24 +270,24 @@ ${PUBLIC_CODE}`;
     );
 
     if (success) {
-      logger.log("Successfully pushed to GitHub!");
+      console.log("Successfully pushed to GitHub!");
       
       // Debug Notion config
-      logger.log("Notion config:", NOTION_CONFIG);
+      console.log("Notion config:", NOTION_CONFIG);
       
       // Push to Notion if enabled
       if (NOTION_CONFIG.enabled) {
-        logger.log("Notion is enabled, pushing to Notion...");
+        console.log("Notion is enabled, pushing to Notion...");
         await pushToNotion();
       } else {
-        logger.log("Notion is disabled or not configured");
+        console.log("Notion is disabled or not configured");
       }
     } else {
-      logger.error("Failed to push to GitHub");
+      console.error("Failed to push to GitHub");
     }
     return success;
   } catch (error) {
-    logger.error("Error in GitHub push:", error);
+    console.error("Error in GitHub push:", error);
     return false;
   }
 };
@@ -321,14 +300,14 @@ const injectInterceptor = () => {
 };
 
 window.addEventListener("message", async (event) => {
-  logger.log("Received submission response");
+  console.log("Received submission response");
   if (event.data.type === "SUBMISSION_RESPONSE") {
     const submissionData = event.data.payload;
-    logger.log("Submission success status:", submissionData.success);
+    console.log("Submission success status:", submissionData.success);
     if (submissionData.success === true) {
       await handleSubmissionPush(submissionData);
     } else {
-      logger.log("Submission was not successful. Not pushing to GitHub.");
+      console.log("Submission was not successful. Not pushing to GitHub.");
     }
   }
 });
@@ -340,14 +319,14 @@ function initSubmitButtonMonitor() {
     );
     if (submitBtn) {
       submitBtn.addEventListener("click", () => {
-        logger.log("Submit button clicked");
+        console.log("Submit button clicked");
       });
     }
   });
 }
 const pushToNotion = async () => {
   if (!NOTION_CONFIG.enabled || !NOTION_CONFIG.token || !NOTION_CONFIG.databaseId) {
-    logger.log('Notion not configured properly:', {
+    console.log('Notion not configured properly:', {
       enabled: NOTION_CONFIG.enabled,
       hasToken: !!NOTION_CONFIG.token,
       hasDatabaseId: !!NOTION_CONFIG.databaseId,
@@ -357,12 +336,34 @@ const pushToNotion = async () => {
   }
 
   try {
-    // Extract difficulty and topic from page content
-    const difficultyElement = document.querySelector('[class*="difficulty"], [class*="Difficulty"]');
-    const topicElement = document.querySelector('[class*="topic"], [class*="Topic"], [class*="tag"]');
+    // Extract topic from URL: /plus/dsa/topic-name/
+    const urlPath = window.location.pathname;
+    console.log('Full URL:', window.location.href);
+    console.log('URL pathname:', urlPath);
     
+    const match = urlPath.match(/\/plus\/dsa\/([^\/]+)/);
+    console.log('Regex match result:', match);
+    
+    let topic = 'General';
+    if (match && match[1]) {
+      const rawTopic = match[1];
+      console.log('Raw topic from URL:', rawTopic);
+      topic = rawTopic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      console.log('Formatted topic:', topic);
+    } else {
+      console.log('No topic match found, using General');
+    }
+    
+    // Extract difficulty from page content
+    const difficultyElement = document.querySelector('[class*="difficulty"], [class*="Difficulty"]');
     const difficulty = difficultyElement?.textContent?.trim() || 'Medium';
-    const topic = topicElement?.textContent?.trim() || 'General';
+    
+    console.log('Extracted data:', { 
+      topic, 
+      difficulty, 
+      url: window.location.href,
+      urlPath: urlPath 
+    });
 
     const problemData = {
       name: QUES || 'Untitled Problem',
@@ -381,14 +382,14 @@ const pushToNotion = async () => {
     });
 
     if (response.success) {
-      logger.log('Problem added to Notion successfully');
+      console.log('Problem added to Notion successfully');
       return true;
     } else {
-      logger.error('Failed to add problem to Notion:', response.error);
+      console.error('Failed to add problem to Notion:', response.error);
       return false;
     }
   } catch (error) {
-    logger.error('Error adding problem to Notion:', error);
+    console.error('Error adding problem to Notion:', error);
     return false;
   }
 };

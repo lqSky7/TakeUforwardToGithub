@@ -1,28 +1,9 @@
-// Initialize logger
-let logger = {
-  enabled: false,
-  log: (...args) => { if (logger.enabled) console.log(...args); },
-  error: (...args) => { if (logger.enabled) console.error(...args); },
-  warn: (...args) => { if (logger.enabled) console.warn(...args); },
-  info: (...args) => { if (logger.enabled) console.info(...args); }
-};
-
-// Load developer mode setting
-chrome.storage.sync.get(['developer_mode'], (data) => {
-  logger.enabled = data.developer_mode || false;
-});
-
 chrome.runtime.onInstalled.addListener(() => {
-  logger.log("Extension installed.");
+  console.log("Extension installed.");
 });
 
 // Handle messages from content script and popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'setDeveloperMode') {
-    logger.enabled = request.enabled;
-    return;
-  }
-  
   if (request.action === 'notionAPI') {
     handleNotionAPICall(request.data)
       .then(response => sendResponse({ success: true, data: response }))
@@ -58,14 +39,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 });
-</edits>
-
-<old_text>
-    return response.ok;
-  } catch (error) {
-    logger.error('Notion connection test failed:', error);
-    return false;
-  }
 
 async function handleNotionAPICall(data) {
   const { url, method, headers, body } = data;
@@ -85,6 +58,8 @@ async function handleNotionAPICall(data) {
 
 async function testNotionConnection(token) {
   try {
+    console.log('Testing Notion connection with token:', token.substring(0, 10) + '...');
+    
     const response = await fetch('https://api.notion.com/v1/users/me', {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -92,9 +67,19 @@ async function testNotionConnection(token) {
       }
     });
     
-    return response.ok;
+    console.log('Notion test response status:', response.status);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Notion user data:', data);
+      return true;
+    } else {
+      const errorText = await response.text();
+      console.error('Notion API error:', response.status, errorText);
+      return false;
+    }
   } catch (error) {
-    logger.error('Notion connection test failed:', error);
+    console.error('Notion connection test failed:', error);
     return false;
   }
 }
@@ -127,7 +112,7 @@ async function findNotionPageByName(token, pageName) {
     }
     return null;
   } catch (error) {
-    logger.error('Error finding page:', error);
+    console.error('Error finding page:', error);
     return null;
   }
 }
@@ -189,11 +174,11 @@ async function createNotionDatabase(token, pageId) {
       const database = await response.json();
       return database.id;
     } else {
-      logger.error('Failed to create Notion database:', await response.text());
+      console.error('Failed to create Notion database:', await response.text());
       return null;
     }
   } catch (error) {
-    logger.error('Error creating Notion database:', error);
+    console.error('Error creating Notion database:', error);
     return null;
   }
 }
@@ -255,14 +240,14 @@ async function addProblemToNotion(config, problemData) {
     });
 
     if (response.ok) {
-      logger.log('Problem added to Notion successfully');
+      console.log('Problem added to Notion successfully');
       return true;
     } else {
-      logger.error('Failed to add problem to Notion:', await response.text());
+      console.error('Failed to add problem to Notion:', await response.text());
       return false;
     }
   } catch (error) {
-    logger.error('Error adding problem to Notion:', error);
+    console.error('Error adding problem to Notion:', error);
     return false;
   }
 }
