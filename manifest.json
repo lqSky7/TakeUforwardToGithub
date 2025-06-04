@@ -25,7 +25,8 @@
       "host_permissions": [
         "https://takeuforward.org/*",
         "https://api.github.com/*",
-        "*://*.takeuforward.org/*"
+        "*://*.takeuforward.org/*",
+        "https://api.notion.com/*"
     ],
     "background": {
       "service_worker": "background.js"

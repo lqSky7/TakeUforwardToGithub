@@ -31,8 +31,9 @@
 
 1. **Open popup** and configure **user**, **repo**, and **token**
    > _Note: Make sure to check the "repo" scope while generating your token_ > ![Project Banner](screenshots/check.png)
-2. **Solve any problem** on the website
-3. When you click "**Submit**", your solution will be **automatically pushed** to GitHub
+2. **(Optional) Enable Notion tracking**: Toggle Notion integration and add your integration token from [notion.so/my-integrations](https://www.notion.so/my-integrations)
+3. **Solve any problem** on the website
+4. When you click "**Submit**", your solution will be **automatically pushed** to GitHub and Notion (if enabled)
 
 ## <u>Description</u>
 
@@ -45,16 +46,19 @@ here's some ai generated readme.md for you.
 
 - **Effortless Integration**: Sync with takeuforward.org and TUF+ platforms like a pro.
 - **Automate the Boring Stuff**: Push questions, solutions, and more directly to your GitHub.
+- **Notion Integration**: Automatically track solved problems in a Notion database with spaced repetition reviews.
 - **Multi-Content Support**: Handles code snippets, questions, and extra notes without breaking a sweat.
 - **Quick Setup**: Intuitive configuration for a frustration-free experience.
 - **Future-Proof**: Safari support is on the horizon. 🦊
 
 ## <u>Example Workflow:</u>
 
-Open TUF+ and start solving questions.
-Watch as the extension scrapes and pushes content to your GitHub in real time.
-Click submit
-🎉 Profit!
+1. Open TUF+ and start solving questions
+2. Watch as the extension scrapes and pushes content to your GitHub in real time
+3. Click submit
+4. Your solution gets pushed to GitHub AND tracked in Notion (if enabled) with next review date
+5. 🎉 Profit!
+</edits>
 
 ## <u>Contributing</u>
 
@@ -82,6 +86,8 @@ This project is licensed under the Mozilla Public License 2.0. See the LICENSE f
 - [x] Automatic code submission detection
 - [x] Custom directory structure based on problem paths
 - [x] Native Safari support (bane of my existence)
+- [x] Notion integration with automatic database creation
+- [x] Spaced repetition tracking (3-day review cycle)
 - [ ] Add option to customize file naming patterns (maybe??)
 - [ ] Dashboard to track submission statistics (maybe??)
 - [ ] Publish to Chrome Web Store (send 5$ pls)

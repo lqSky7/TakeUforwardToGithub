@@ -124,6 +124,73 @@
             </div>
           </div>
 
+          <!-- Notion Section -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <span class="section-icon">📝</span>
+              Notion Integration
+            </h3>
+            <div class="form-group">
+              <label class="toggle-wrapper">
+                <input type="checkbox" id="notion-enabled" class="toggle-input">
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Enable Notion tracking</span>
+              </label>
+            </div>
+            <div id="notion-config" class="notion-config hidden">
+              <div class="form-group">
+                <label for="notion-token" class="field-label">
+                  Integration Token
+                  <span class="required">*</span>
+                </label>
+                <div class="input-wrapper">
+                  <input
+                    type="password"
+                    id="notion-token"
+                    class="field-input"
+                    placeholder="ntn_xxxxxxxxxxxxxxxxxxxx"
+                  />
+                  <button type="button" class="toggle-password" id="toggle-notion-token">
+                    <span class="toggle-icon">👁</span>
+                  </button>
+                </div>
+                <div class="field-help">
+                  <a href="https://www.notion.so/my-integrations" target="_blank" class="help-link">
+                    → Create new integration
+                  </a>
+                  <a href="https://developers.notion.com/docs/create-a-notion-integration" target="_blank" class="help-link">
+                    → Setup guide
+                  </a>
+                  <span class="help-text">Use the token from your integration</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="notion-page" class="field-label">
+                  Page Name
+                  <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="notion-page"
+                  class="field-input"
+                  placeholder="TakeUforward Tracker"
+                />
+                <div class="field-help">
+                  <span class="help-text">Must match the exact page name in Notion</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <button type="button" class="btn btn-secondary" id="create-notion-database">
+                  <span class="btn-icon">📝</span>
+                  Create Database
+                </button>
+                <div class="field-help">
+                  <span class="help-text">Click to create the tracking database in Notion</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Validation Messages -->
           <div class="validation-section" id="validation-messages"></div>
 
@@ -159,6 +226,10 @@
                 <span class="status-label">Last Sync:</span>
                 <span class="status-value" id="last-sync">Never</span>
               </div>
+              <div class="status-item">
+                <span class="status-label">Notion:</span>
+                <span class="status-value" id="notion-status">Not configured</span>
+              </div>
             </div>
           </div>
           
@@ -187,6 +258,7 @@
               <li>Create a GitHub repository for your solutions</li>
               <li>Generate a personal access token with repo permissions</li>
               <li>Enter your credentials in the Configuration tab</li>
+              <li>(Optional) Enable Notion tracking and add integration token</li>
               <li>Test the connection to verify setup</li>
               <li>Start solving problems on TakeUforward!</li>
             </ol>
@@ -206,6 +278,10 @@
               <details class="help-detail">
                 <summary>Solutions not syncing?</summary>
                 <p>Check the Status tab for connection issues. Ensure you're logged into TakeUforward.</p>
+              </details>
+              <details class="help-detail">
+                <summary>How to set up Notion?</summary>
+                <p>Create a Notion integration at <code>notion.so/my-integrations</code>, copy the token, and enable Notion tracking. The database will be created automatically.</p>
               </details>
             </div>
           </div>

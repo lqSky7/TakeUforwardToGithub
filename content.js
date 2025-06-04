@@ -67,14 +67,28 @@ const GITHUB_CONFIG = {
   branch: "",
 };
 
+const NOTION_CONFIG = {
+  enabled: false,
+  token: "",
+  page: "",
+  databaseId: "",
+};
+
 const initGitHubConfig = () => {
   chrome.storage.sync.get(
-    ["github_token", "github_owner", "github_repo", "github_branch"],
+    ["github_token", "github_owner", "github_repo", "github_branch", "notion_enabled", "notion_token", "notion_page", "notion_database_id"],
     (data) => {
       GITHUB_CONFIG.token = data.github_token || "";
       GITHUB_CONFIG.owner = data.github_owner || "";
       GITHUB_CONFIG.repo = data.github_repo || "";
       GITHUB_CONFIG.branch = data.github_branch || "main";
+
+      NOTION_CONFIG.enabled = data.notion_enabled || false;
+      NOTION_CONFIG.token = data.notion_token || "";
+      NOTION_CONFIG.page = data.notion_page || "";
+      NOTION_CONFIG.databaseId = data.notion_database_id || "";
+
+      console.log("Loaded config:", { GITHUB_CONFIG, NOTION_CONFIG });
 
       if (!GITHUB_CONFIG.token || !GITHUB_CONFIG.owner || !GITHUB_CONFIG.repo) {
         alert(
@@ -185,15 +199,22 @@ const handleSubmissionPush = async (Sdata) => {
     fetchQuestionDetails();
     fetchLatestCodeData();
 
-    // Initialize GitHub config
+    // Initialize GitHub and Notion config
     await new Promise((resolve) => {
       chrome.storage.sync.get(
-        ["github_token", "github_owner", "github_repo", "github_branch"],
+        ["github_token", "github_owner", "github_repo", "github_branch", "notion_enabled", "notion_token", "notion_page", "notion_database_id"],
         (data) => {
           GITHUB_CONFIG.token = data.github_token;
           GITHUB_CONFIG.owner = data.github_owner;
           GITHUB_CONFIG.repo = data.github_repo;
           GITHUB_CONFIG.branch = data.github_branch || "main";
+          
+          NOTION_CONFIG.enabled = data.notion_enabled || false;
+          NOTION_CONFIG.token = data.notion_token || "";
+          NOTION_CONFIG.page = data.notion_page || "";
+          NOTION_CONFIG.databaseId = data.notion_database_id || "";
+          
+          console.log("Refreshed config for submission:", { GITHUB_CONFIG, NOTION_CONFIG });
           resolve();
         },
       );
@@ -250,6 +271,17 @@ ${PUBLIC_CODE}`;
 
     if (success) {
       console.log("Successfully pushed to GitHub!");
+      
+      // Debug Notion config
+      console.log("Notion config:", NOTION_CONFIG);
+      
+      // Push to Notion if enabled
+      if (NOTION_CONFIG.enabled) {
+        console.log("Notion is enabled, pushing to Notion...");
+        await pushToNotion();
+      } else {
+        console.log("Notion is disabled or not configured");
+      }
     } else {
       console.error("Failed to push to GitHub");
     }
@@ -292,7 +324,58 @@ function initSubmitButtonMonitor() {
     }
   });
 }
+const pushToNotion = async () => {
+  if (!NOTION_CONFIG.enabled || !NOTION_CONFIG.token || !NOTION_CONFIG.databaseId) {
+    console.log('Notion not configured properly:', {
+      enabled: NOTION_CONFIG.enabled,
+      hasToken: !!NOTION_CONFIG.token,
+      hasDatabaseId: !!NOTION_CONFIG.databaseId,
+      hasPage: !!NOTION_CONFIG.page
+    });
+    return false;
+  }
+
+  try {
+    // Extract difficulty and topic from page content
+    const difficultyElement = document.querySelector('[class*="difficulty"], [class*="Difficulty"]');
+    const topicElement = document.querySelector('[class*="topic"], [class*="Topic"], [class*="tag"]');
+    
+    const difficulty = difficultyElement?.textContent?.trim() || 'Medium';
+    const topic = topicElement?.textContent?.trim() || 'General';
+
+    const problemData = {
+      name: QUES || 'Untitled Problem',
+      link: window.location.href,
+      difficulty: difficulty,
+      topic: topic
+    };
+
+    // Use background script to make Notion API call
+    const response = await new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        action: 'addProblemToNotion',
+        config: NOTION_CONFIG,
+        problemData: problemData
+      }, resolve);
+    });
+
+    if (response.success) {
+      console.log('Problem added to Notion successfully');
+      return true;
+    } else {
+      console.error('Failed to add problem to Notion:', response.error);
+      return false;
+    }
+  } catch (error) {
+    console.error('Error adding problem to Notion:', error);
+    return false;
+  }
+};
+
+
+
 // Call initialization methods immediately
+initGitHubConfig();
 injectInterceptor();
 initSubmitButtonMonitor();
 startTimeTracking();

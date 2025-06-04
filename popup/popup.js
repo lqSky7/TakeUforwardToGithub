@@ -3,6 +3,7 @@ class PopupController {
     this.currentTab = 'config';
     this.isConnected = false;
     this.config = {};
+    this.notionConfig = {};
     this.validators = {};
     this.debounceTimers = {};
     this.statusDataLoaded = false;
@@ -38,20 +39,38 @@ class PopupController {
       this.togglePasswordVisibility('github-token');
     });
 
+    // Notion password toggle
+    document.getElementById('toggle-notion-token').addEventListener('click', () => {
+      this.togglePasswordVisibility('notion-token');
+    });
+
+    // Notion toggle
+    document.getElementById('notion-enabled').addEventListener('change', (e) => {
+      this.toggleNotionConfig(e.target.checked);
+    });
+
+    // Create Notion database button
+    document.getElementById('create-notion-database').addEventListener('click', () => {
+      this.createNotionDatabaseManually();
+    });
+
     // Branch selector
     document.getElementById('github-branch').addEventListener('change', (e) => {
       this.handleBranchSelection(e.target.value);
     });
 
     // Real-time validation
-    ['github-token', 'github-owner', 'github-repo'].forEach(fieldId => {
+    ['github-token', 'github-owner', 'github-repo', 'notion-token', 'notion-page'].forEach(fieldId => {
       const field = document.getElementById(fieldId);
-      field.addEventListener('input', () => {
-        this.debounceValidation(fieldId, field.value);
-      });
-      field.addEventListener('blur', () => {
-        this.validateField(fieldId, field.value);
-      });
+      if (field) {
+        field.addEventListener('input', () => {
+          this.clearValidationMessages();
+          this.debounceValidation(fieldId, field.value);
+        });
+        field.addEventListener('blur', () => {
+          this.validateField(fieldId, field.value);
+        });
+      }
     });
 
     // Keyboard shortcuts
@@ -76,6 +95,16 @@ class PopupController {
         required: true,
         pattern: /^[a-zA-Z0-9._-]+$/,
         message: 'Repository name can only contain letters, numbers, dots, hyphens, and underscores'
+      },
+      'notion-token': {
+        required: false,
+        pattern: /^ntn/,
+        message: 'Invalid Notion token format. Should start with ntn'
+      },
+      'notion-page': {
+        required: false,
+        pattern: /^.{1,}$/,
+        message: 'Page name cannot be empty'
       }
     };
   }
@@ -84,6 +113,7 @@ class PopupController {
     try {
       const data = await chrome.storage.sync.get([
         'github_token', 'github_owner', 'github_repo', 'github_branch',
+        'notion_enabled', 'notion_token', 'notion_page', 'notion_database_id',
         'last_sync', 'takeuforward_time', 'last_activity', 'repo_info'
       ]);
 
@@ -92,6 +122,13 @@ class PopupController {
         owner: data.github_owner || '',
         repo: data.github_repo || '',
         branch: data.github_branch || 'main'
+      };
+
+      this.notionConfig = {
+        enabled: data.notion_enabled || false,
+        token: data.notion_token || '',
+        page: data.notion_page || '',
+        databaseId: data.notion_database_id || ''
       };
 
       // Store status data for later use
@@ -122,6 +159,12 @@ class PopupController {
       customBranchInput.value = this.config.branch;
       customBranchInput.classList.remove('hidden');
     }
+
+    // Populate Notion fields
+    document.getElementById('notion-enabled').checked = this.notionConfig.enabled;
+    document.getElementById('notion-token').value = this.notionConfig.token;
+    document.getElementById('notion-page').value = this.notionConfig.page;
+    this.toggleNotionConfig(this.notionConfig.enabled);
   }
 
   initializeUI() {
@@ -230,14 +273,26 @@ class PopupController {
     this.showLoadingState(true);
     
     try {
-      await chrome.storage.sync.set({
+      const saveData = {
         github_token: formData.token,
         github_owner: formData.owner,
         github_repo: formData.repo,
-        github_branch: formData.branch
-      });
+        github_branch: formData.branch,
+        notion_enabled: formData.notionEnabled,
+        notion_token: formData.notionToken,
+        notion_page: formData.notionPage
+      };
+
+      await chrome.storage.sync.set(saveData);
 
       this.config = formData;
+      this.notionConfig = {
+        enabled: formData.notionEnabled,
+        token: formData.notionToken,
+        page: formData.notionPage,
+        databaseId: this.notionConfig.databaseId
+      };
+      
       this.updateConnectionStatus();
       
       // Auto-test connection after save
@@ -258,7 +313,10 @@ class PopupController {
       token: document.getElementById('github-token').value.trim(),
       owner: document.getElementById('github-owner').value.trim(),
       repo: document.getElementById('github-repo').value.trim(),
-      branch: branchSelect.value === 'custom' ? customBranch.value.trim() : branchSelect.value
+      branch: branchSelect.value === 'custom' ? customBranch.value.trim() : branchSelect.value,
+      notionEnabled: document.getElementById('notion-enabled').checked,
+      notionToken: document.getElementById('notion-token').value.trim(),
+      notionPage: document.getElementById('notion-page').value.trim()
     };
   }
 
@@ -266,7 +324,20 @@ class PopupController {
     let isValid = true;
     
     Object.keys(this.validators).forEach(fieldId => {
-      const fieldValue = data[fieldId.replace('github-', '')];
+      let fieldValue;
+      if (fieldId.startsWith('github-')) {
+        fieldValue = data[fieldId.replace('github-', '')];
+      } else if (fieldId === 'notion-token') {
+        fieldValue = data.notionToken;
+      } else if (fieldId === 'notion-page') {
+        fieldValue = data.notionPage;
+      }
+      
+      // Skip validation for notion fields if notion is not enabled
+      if ((fieldId === 'notion-token' || fieldId === 'notion-page') && !data.notionEnabled) {
+        return;
+      }
+      
       if (!this.validateField(fieldId, fieldValue)) {
         isValid = false;
       }
@@ -300,6 +371,20 @@ class PopupController {
         this.showLoadingState(true, 'Fetching commit count...');
         const commitCount = await this.fetchCommitCount(formData.token, formData.owner, formData.repo);
         
+        let notionStatus = 'Not configured';
+        
+        // Test Notion connection if enabled
+        if (formData.notionEnabled && formData.notionToken) {
+          this.showLoadingState(true, 'Testing Notion connection...');
+          const notionResponse = await new Promise((resolve) => {
+            chrome.runtime.sendMessage({
+              action: 'testNotionConnection',
+              token: formData.notionToken
+            }, resolve);
+          });
+          notionStatus = notionResponse.success && notionResponse.isValid ? 'Connected' : 'Failed';
+        }
+        
         this.isConnected = true;
         this.updateConnectionStatus(true);
         
@@ -315,6 +400,15 @@ class PopupController {
         };
         
         await chrome.storage.sync.set(newData);
+        
+        // Show success message with Notion status
+        const validationDiv = document.getElementById('validation-messages');
+        validationDiv.innerHTML = `
+          <div class="validation-message success">
+            ✅ GitHub connection successful!<br>
+            📝 Notion: ${notionStatus}
+          </div>
+        `;
         
         // Update stored data and UI
         this.statusData = { ...this.statusData, ...newData };
@@ -427,6 +521,7 @@ class PopupController {
     const apiStatus = document.getElementById('api-status');
     const repoStatus = document.getElementById('repo-status');
     const lastSync = document.getElementById('last-sync');
+    const notionStatus = document.getElementById('notion-status');
     
     apiStatus.textContent = this.isConnected ? 'Connected' : 'Disconnected';
     apiStatus.style.color = this.isConnected ? 'var(--success)' : 'var(--error)';
@@ -437,6 +532,14 @@ class PopupController {
     } else {
       repoStatus.textContent = 'Not configured';
       repoStatus.style.color = 'var(--error)';
+    }
+    
+    if (this.notionConfig.enabled) {
+      notionStatus.textContent = this.notionConfig.token ? 'Enabled' : 'Token missing';
+      notionStatus.style.color = this.notionConfig.token ? 'var(--success)' : 'var(--warning)';
+    } else {
+      notionStatus.textContent = 'Disabled';
+      notionStatus.style.color = 'var(--text-tertiary)';
     }
     
     if (data.last_sync) {
@@ -550,7 +653,8 @@ class PopupController {
 
   togglePasswordVisibility(fieldId) {
     const field = document.getElementById(fieldId);
-    const toggleBtn = document.getElementById('toggle-token');
+    const toggleBtnId = fieldId === 'notion-token' ? 'toggle-notion-token' : 'toggle-token';
+    const toggleBtn = document.getElementById(toggleBtnId);
     const icon = toggleBtn.querySelector('.toggle-icon');
     
     if (field.type === 'password') {
@@ -559,6 +663,92 @@ class PopupController {
     } else {
       field.type = 'password';
       icon.textContent = '👁';
+    }
+  }
+
+  toggleNotionConfig(enabled) {
+    const notionConfig = document.getElementById('notion-config');
+    if (enabled) {
+      notionConfig.classList.remove('hidden');
+    } else {
+      notionConfig.classList.add('hidden');
+    }
+  }
+
+  async createNotionDatabaseManually() {
+    const formData = this.collectFormData();
+    
+    if (!formData.notionToken || !formData.notionPage) {
+      const validationDiv = document.getElementById('validation-messages');
+      validationDiv.innerHTML = `
+        <div class="validation-message error">
+          ❌ Please provide both Notion token and page name
+        </div>
+      `;
+      return;
+    }
+
+    this.showLoadingState(true, 'Creating Notion database...');
+    
+    try {
+      // Find the page by name using background script
+      const pageResponse = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: 'findNotionPage',
+          token: formData.notionToken,
+          pageName: formData.notionPage
+        }, resolve);
+      });
+
+      if (!pageResponse.success || !pageResponse.pageId) {
+        const validationDiv = document.getElementById('validation-messages');
+        validationDiv.innerHTML = `
+          <div class="validation-message error">
+            ❌ Page "${formData.notionPage}" not found. Make sure the name matches exactly.
+          </div>
+        `;
+        this.showLoadingState(false);
+        return;
+      }
+
+      // Create the database in the found page using background script
+      const databaseResponse = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          action: 'createNotionDatabase',
+          token: formData.notionToken,
+          pageId: pageResponse.pageId
+        }, resolve);
+      });
+
+      if (databaseResponse.success && databaseResponse.databaseId) {
+        // Save the database ID
+        await chrome.storage.sync.set({ notion_database_id: databaseResponse.databaseId });
+        this.notionConfig.databaseId = databaseResponse.databaseId;
+        
+        const validationDiv = document.getElementById('validation-messages');
+        validationDiv.innerHTML = `
+          <div class="validation-message success">
+            📝 Notion database created successfully!
+          </div>
+        `;
+      } else {
+        const validationDiv = document.getElementById('validation-messages');
+        validationDiv.innerHTML = `
+          <div class="validation-message error">
+            ❌ Failed to create Notion database. ${databaseResponse.error || 'Check your permissions.'}
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('Error creating database:', error);
+      const validationDiv = document.getElementById('validation-messages');
+      validationDiv.innerHTML = `
+        <div class="validation-message error">
+          ❌ Error: ${error.message}
+        </div>
+      `;
+    } finally {
+      this.showLoadingState(false);
     }
   }
 
@@ -608,7 +798,12 @@ class PopupController {
     }
   }
 
-
+  clearValidationMessages() {
+    const validationDiv = document.getElementById('validation-messages');
+    if (validationDiv) {
+      validationDiv.innerHTML = '';
+    }
+  }
 
   updateVersionInfo() {
     // Get version from manifest if available
