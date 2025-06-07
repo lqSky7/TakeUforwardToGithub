@@ -47,17 +47,40 @@ here's some ai generated readme.md for you.
 - **Effortless Integration**: Sync with takeuforward.org and TUF+ platforms like a pro.
 - **Automate the Boring Stuff**: Push questions, solutions, and more directly to your GitHub.
 - **Notion Integration**: Automatically track solved problems in a Notion database with spaced repetition reviews.
+- **Smart Revision System**: Spaced repetition algorithm tracks mistakes and solving time to schedule optimal review dates.
+- **Google Calendar Integration**: One-click links to add revision reminders to your calendar.
 - **Multi-Content Support**: Handles code snippets, questions, and extra notes without breaking a sweat.
 - **Quick Setup**: Intuitive configuration for a frustration-free experience.
 - **Future-Proof**: Safari support is on the horizon. 🦊
 
+## <u>Spaced Repetition Algorithm 🧠</u>
+
+The extension uses a smart algorithm to determine when you should revisit problems:
+
+### **How it works:**
+- **Mistake Tracking**: Every click on the "Run" button counts as a mistake
+- **Time Tracking**: Records how long you take to solve each problem
+- **Difficulty Scoring**: Combines mistakes (0-6+) and time (<5min, 5-15min, >15min) to classify problems as Easy, Medium, or Hard
+- **Review Intervals**: Uses spaced repetition intervals [1, 3, 7, 14, 30, 90 days] with difficulty-based adjustments
+  - Easy problems: Full intervals
+  - Medium problems: 80% of interval (20% reduction)
+  - Hard problems: 60% of interval (40% reduction)
+
+### **Revision Management:**
+- Access the **Revisions tab** in the extension popup
+- View problems due today, upcoming reviews, or all problems
+- Mark revisions as "Easy" (increases interval) or "Hard" (resets to shorter interval)
+- Direct Google Calendar integration with problem details
+
 ## <u>Example Workflow:</u>
 
 1. Open TUF+ and start solving questions
-2. Watch as the extension scrapes and pushes content to your GitHub in real time
+2. Watch as the extension tracks your mistakes (run button clicks) and solving time
 3. Click submit
 4. Your solution gets pushed to GitHub AND tracked in Notion (if enabled) with next review date
-5. 🎉 Profit!
+5. Check the Revisions tab in the extension popup to see problems due for review
+6. Use Google Calendar integration to schedule revision reminders
+7. 🎉 Profit!
 </edits>
 
 ## <u>Contributing</u>
@@ -87,7 +110,9 @@ This project is licensed under the Mozilla Public License 2.0. See the LICENSE f
 - [x] Custom directory structure based on problem paths
 - [x] Native Safari support (bane of my existence)
 - [x] Notion integration with automatic database creation
-- [x] Spaced repetition tracking (3-day review cycle)
+- [x] Advanced spaced repetition system with difficulty-based intervals
+- [x] Mistake tracking (run button clicks) and time measurement
+- [x] Revisions tab with Google Calendar integration
 - [ ] Add option to customize file naming patterns (maybe??)
 - [ ] Dashboard to track submission statistics (maybe??)
 - [ ] Publish to Chrome Web Store (send 5$ pls)

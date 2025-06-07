@@ -8,11 +8,14 @@ class PopupController {
     this.debounceTimers = {};
     this.statusDataLoaded = false;
     this.statusData = {};
+    this.revisionSystem = null;
+    this.currentFilter = 'all';
     
     this.initializeEventListeners();
     this.initializeValidators();
     this.loadStoredConfiguration();
     this.initializeUI();
+    this.initializeRevisionSystem();
   }
 
   initializeEventListeners() {
@@ -48,6 +51,28 @@ class PopupController {
     document.getElementById('notion-enabled').addEventListener('change', (e) => {
       this.toggleNotionConfig(e.target.checked);
     });
+
+    // Revision system handlers
+    document.getElementById('refresh-revisions').addEventListener('click', () => {
+      this.loadRevisions();
+    });
+
+    document.getElementById('clear-revisions').addEventListener('click', () => {
+      this.clearRevisions();
+    });
+
+    // Filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        this.setFilter(e.target.dataset.filter);
+      });
+    });
+
+    // Set default active filter
+    document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+    document.querySelector('.filter-btn[data-filter="due"]').classList.remove('active');
+
+    // Event delegation for revision buttons (removed - no longer needed)
 
     // Create Notion database button
     document.getElementById('create-notion-database').addEventListener('click', () => {
@@ -181,21 +206,26 @@ class PopupController {
   }
 
   switchTab(tabName) {
+    this.currentTab = tabName;
+    
     // Update tab buttons
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
-
+    
     // Update tab content
     document.querySelectorAll('.tab-content').forEach(content => {
       content.classList.toggle('active', content.id === `${tabName}-tab`);
     });
-
-    this.currentTab = tabName;
-
-    // Only refresh status data if it hasn't been loaded yet
+    
+    // Load status data when switching to status tab
     if (tabName === 'status' && !this.statusDataLoaded) {
       this.refreshStatusData();
+    }
+    
+    // Load revisions when switching to revisions tab
+    if (tabName === 'revisions' && this.revisionSystem) {
+      this.loadRevisions();
     }
   }
 
@@ -791,10 +821,10 @@ class PopupController {
       this.testConnection();
     }
     
-    // Tab navigation with Ctrl/Cmd + 1,2,3
-    if ((e.ctrlKey || e.metaKey) && ['1', '2', '3'].includes(e.key)) {
+    // Tab navigation with Ctrl/Cmd + 1,2,3,4
+    if ((e.ctrlKey || e.metaKey) && ['1', '2', '3', '4'].includes(e.key)) {
       e.preventDefault();
-      const tabs = ['config', 'status', 'help'];
+      const tabs = ['config', 'revisions', 'status', 'help'];
       this.switchTab(tabs[parseInt(e.key) - 1]);
     }
   }
@@ -827,11 +857,156 @@ class PopupController {
       }
     }
   }
+
+  // Revision System Methods
+  async initializeRevisionSystem() {
+    try {
+      // Import revision system
+      const script = document.createElement('script');
+      script.src = '../revision-system.js';
+      document.head.appendChild(script);
+      
+      script.onload = () => {
+        this.revisionSystem = new window.RevisionSystem();
+        console.log('Revision system initialized in popup');
+      };
+    } catch (error) {
+      console.error('Failed to initialize revision system:', error);
+    }
+  }
+
+  async loadRevisions() {
+    if (!this.revisionSystem) {
+      console.log('Revision system not initialized yet');
+      return;
+    }
+
+    try {
+      const listContainer = document.getElementById('revisions-list');
+      listContainer.innerHTML = '<div class="loading-message">Loading...</div>';
+
+      let problems = [];
+      const stats = await this.revisionSystem.getRevisionStats();
+
+      // Update stats
+      document.getElementById('due-count').textContent = stats.dueForRevision;
+      document.getElementById('total-problems').textContent = stats.totalProblems;
+
+      // Update extension badge
+      try {
+        chrome.runtime.sendMessage({
+          action: 'updateBadge',
+          count: stats.dueForRevision
+        });
+      } catch (badgeError) {
+        console.error('Error updating badge:', badgeError);
+      }
+
+      // Get problems based on filter
+      switch (this.currentFilter) {
+        case 'due':
+          problems = await this.revisionSystem.getProblemsForRevision();
+          break;
+        case 'upcoming':
+          const allProblems = await this.revisionSystem.getAllProblems();
+          const now = new Date();
+          problems = allProblems.filter(p => new Date(p.nextRevisionDate) > now);
+          break;
+        case 'all':
+          problems = await this.revisionSystem.getAllProblems();
+          break;
+      }
+
+      this.renderRevisionsList(problems);
+    } catch (error) {
+      console.error('Error loading revisions:', error);
+      document.getElementById('revisions-list').innerHTML = 
+        '<div class="empty-message">Error loading revisions</div>';
+    }
+  }
+
+  renderRevisionsList(problems) {
+    const listContainer = document.getElementById('revisions-list');
+    
+    if (problems.length === 0) {
+      listContainer.innerHTML = '<div class="empty-message">No problems found</div>';
+      return;
+    }
+
+    const problemsHtml = problems.map(problem => {
+      const now = new Date();
+      const revisionDate = new Date(problem.nextRevisionDate);
+      const isOverdue = revisionDate < now && this.currentFilter !== 'upcoming';
+      const isDue = Math.abs(revisionDate - now) < 24 * 60 * 60 * 1000; // Within 24 hours
+      
+      let statusClass = '';
+      if (isOverdue) statusClass = 'overdue';
+      else if (isDue) statusClass = 'due';
+
+      const calendarLink = this.revisionSystem.generateCalendarLink(problem);
+      
+      return `
+        <div class="revision-item ${statusClass}">
+          <div class="revision-info">
+            <div class="revision-name">${problem.name}</div>
+            <div class="revision-details">
+              <span class="difficulty-badge difficulty-${problem.difficultyLevel}">
+                ${problem.difficultyLevel}
+              </span>
+              <span>${problem.mistakes} mistakes</span>
+              <span>${problem.timeInMinutes}m</span>
+              <span>Rev #${problem.revisionCount}</span>
+            </div>
+            <div class="revision-meta">
+              <span>${this.revisionSystem.formatDate(problem.nextRevisionDate)}</span>
+            </div>
+          </div>
+          <div class="revision-actions">
+            <a href="${calendarLink}" target="_blank" class="revision-btn calendar">
+              + Add to Calendar
+            </a>
+            <a href="${problem.link}" target="_blank" class="revision-btn visit">
+              > Solve Problem
+            </a>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    listContainer.innerHTML = problemsHtml;
+  }
+
+  // Removed markRevisionComplete method - no longer needed
+
+  setFilter(filter) {
+    this.currentFilter = filter;
+    
+    // Update active filter button
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.filter === filter);
+    });
+    
+    // Reload with new filter
+    this.loadRevisions();
+  }
+
+  async clearRevisions() {
+    if (confirm('Are you sure you want to clear all revision data? This cannot be undone.')) {
+      try {
+        await this.revisionSystem.clearAllData();
+        this.loadRevisions();
+        console.log('All revision data cleared');
+      } catch (error) {
+        console.error('Error clearing revision data:', error);
+      }
+    }
+  }
 }
 
 // Initialize popup when DOM is loaded
+let popupController;
 document.addEventListener('DOMContentLoaded', () => {
-  new PopupController();
+  popupController = new PopupController();
 });
 
 // Handle popup resize for better UX

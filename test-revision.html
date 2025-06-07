@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revision System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #e6e6e6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #2a2a2a;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .output {
+            background: #333;
+            padding: 10px;
+            border-radius: 3px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .problem-item {
+            background: #444;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+        .calendar-link {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .calendar-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>TUF+ Revision System Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Initialize Revision System</h2>
+        <button onclick="initSystem()">Initialize System</button>
+        <div id="init-output" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Add Test Problems</h2>
+        <button onclick="addTestProblems()">Add Sample Problems</button>
+        <div id="add-output" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. View Problems Due for Revision</h2>
+        <button onclick="showDueProblems()">Show Due Problems</button>
+        <div id="due-output" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. View All Problems</h2>
+        <button onclick="showAllProblems()">Show All Problems</button>
+        <div id="all-output" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Test Calendar Integration</h2>
+        <button onclick="testCalendarLinks()">Generate Calendar Links</button>
+        <div id="calendar-output" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Revision Statistics</h2>
+        <button onclick="showStats()">Show Statistics</button>
+        <div id="stats-output" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>7. Complete Revision Test</h2>
+        <button onclick="testRevisionCompletion()">Test Revision Completion</button>
+        <div id="completion-output" class="output"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>8. Clear Test Data</h2>
+        <button onclick="clearData()" style="background: #f44336;">Clear All Data</button>
+        <div id="clear-output" class="output"></div>
+    </div>
+
+    <script src="revision-system.js"></script>
+    <script>
+        let revisionSystem;
+
+        function log(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+        }
+
+        function initSystem() {
+            try {
+                revisionSystem = new RevisionSystem();
+                log('init-output', 'Revision system initialized successfully');
+            } catch (error) {
+                log('init-output', 'Error initializing: ' + error.message);
+            }
+        }
+
+        async function addTestProblems() {
+            if (!revisionSystem) {
+                log('add-output', 'Please initialize system first');
+                return;
+            }
+
+            const testProblems = [
+                {
+                    name: "Two Sum",
+                    link: "https://takeuforward.org/plus/dsa/arrays/two-sum",
+                    mistakes: 1,
+                    timeInMinutes: 3,
+                    solvedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+                },
+                {
+                    name: "Binary Search",
+                    link: "https://takeuforward.org/plus/dsa/binary-search/basic-binary-search",
+                    mistakes: 5,
+                    timeInMinutes: 20,
+                    solvedDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
+                },
+                {
+                    name: "Merge Sort",
+                    link: "https://takeuforward.org/plus/dsa/sorting/merge-sort",
+                    mistakes: 0,
+                    timeInMinutes: 2,
+                    solvedDate: new Date() // today
+                }
+            ];
+
+            try {
+                for (const problem of testProblems) {
+                    await revisionSystem.addProblem(problem);
+                    log('add-output', `Added: ${problem.name} (${problem.mistakes} mistakes, ${problem.timeInMinutes}min)`);
+                }
+                log('add-output', 'All test problems added successfully');
+            } catch (error) {
+                log('add-output', 'Error adding problems: ' + error.message);
+            }
+        }
+
+        async function showDueProblems() {
+            if (!revisionSystem) {
+                log('due-output', 'Please initialize system first');
+                return;
+            }
+
+            try {
+                const dueProblems = await revisionSystem.getProblemsForRevision();
+                log('due-output', `Found ${dueProblems.length} problems due for revision:`);
+                
+                dueProblems.forEach((problem, index) => {
+                    log('due-output', `${index + 1}. ${problem.name} - Due: ${revisionSystem.formatDate(problem.nextRevisionDate)} (${problem.difficultyLevel})`);
+                });
+            } catch (error) {
+                log('due-output', 'Error fetching due problems: ' + error.message);
+            }
+        }
+
+        async function showAllProblems() {
+            if (!revisionSystem) {
+                log('all-output', 'Please initialize system first');
+                return;
+            }
+
+            try {
+                const allProblems = await revisionSystem.getAllProblems();
+                log('all-output', `Total problems: ${allProblems.length}`);
+                
+                allProblems.forEach((problem, index) => {
+                    const nextRev = revisionSystem.formatDate(problem.nextRevisionDate);
+                    log('all-output', `${index + 1}. ${problem.name}`);
+                    log('all-output', `   Difficulty: ${problem.difficultyLevel} | Mistakes: ${problem.mistakes} | Time: ${problem.timeInMinutes}min`);
+                    log('all-output', `   Next Revision: ${nextRev} | Revision Count: ${problem.revisionCount}`);
+                    log('all-output', '');
+                });
+            } catch (error) {
+                log('all-output', 'Error fetching all problems: ' + error.message);
+            }
+        }
+
+        async function testCalendarLinks() {
+            if (!revisionSystem) {
+                log('calendar-output', 'Please initialize system first');
+                return;
+            }
+
+            try {
+                const dueProblems = await revisionSystem.getProblemsForRevision();
+                log('calendar-output', 'Google Calendar links for due problems:');
+                
+                dueProblems.forEach((problem, index) => {
+                    const calendarLink = revisionSystem.generateCalendarLink(problem);
+                    const element = document.getElementById('calendar-output');
+                    element.innerHTML += `<div class="problem-item">
+                        <strong>${problem.name}</strong><br>
+                        <a href="${calendarLink}" target="_blank" class="calendar-link">📅 Add to Google Calendar</a>
+                    </div>`;
+                });
+                
+                if (dueProblems.length === 0) {
+                    log('calendar-output', 'No problems due for revision');
+                }
+            } catch (error) {
+                log('calendar-output', 'Error generating calendar links: ' + error.message);
+            }
+        }
+
+        async function showStats() {
+            if (!revisionSystem) {
+                log('stats-output', 'Please initialize system first');
+                return;
+            }
+
+            try {
+                const stats = await revisionSystem.getRevisionStats();
+                log('stats-output', 'Revision Statistics:');
+                log('stats-output', `Total Problems: ${stats.totalProblems}`);
+                log('stats-output', `Due for Revision: ${stats.dueForRevision}`);
+                log('stats-output', `Completed Revisions: ${stats.completedRevisions}`);
+                log('stats-output', 'Difficulty Breakdown:');
+                Object.entries(stats.difficultyBreakdown).forEach(([level, count]) => {
+                    log('stats-output', `  ${level}: ${count}`);
+                });
+            } catch (error) {
+                log('stats-output', 'Error fetching stats: ' + error.message);
+            }
+        }
+
+        async function testRevisionCompletion() {
+            if (!revisionSystem) {
+                log('completion-output', 'Please initialize system first');
+                return;
+            }
+
+            try {
+                const dueProblems = await revisionSystem.getProblemsForRevision();
+                if (dueProblems.length === 0) {
+                    log('completion-output', 'No problems due for revision to test with');
+                    return;
+                }
+
+                const testProblem = dueProblems[0];
+                log('completion-output', `Testing revision completion for: ${testProblem.name}`);
+                log('completion-output', `Before: Next revision - ${revisionSystem.formatDate(testProblem.nextRevisionDate)}`);
+                
+                // Mark as easy revision
+                const updatedProblem = await revisionSystem.completeRevision(testProblem.id, true);
+                log('completion-output', `After marking as easy: Next revision - ${revisionSystem.formatDate(updatedProblem.nextRevisionDate)}`);
+                log('completion-output', `Revision count increased to: ${updatedProblem.revisionCount}`);
+            } catch (error) {
+                log('completion-output', 'Error testing revision completion: ' + error.message);
+            }
+        }
+
+        async function clearData() {
+            if (!revisionSystem) {
+                log('clear-output', 'Please initialize system first');
+                return;
+            }
+
+            if (confirm('Are you sure you want to clear all test data?')) {
+                try {
+                    await revisionSystem.clearAllData();
+                    log('clear-output', 'All revision data cleared successfully');
+                    
+                    // Clear all outputs
+                    ['init-output', 'add-output', 'due-output', 'all-output', 'calendar-output', 'stats-output', 'completion-output'].forEach(id => {
+                        document.getElementById(id).textContent = '';
+                    });
+                } catch (error) {
+                    log('clear-output', 'Error clearing data: ' + error.message);
+                }
+            }
+        }
+
+        // Auto-initialize on page load
+        window.addEventListener('load', () => {
+            initSystem();
+        });
+    </script>
+</body>
+</html>

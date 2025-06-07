@@ -48,6 +48,266 @@
   padding: 0;
 }
 
+/* Revisions Tab Styles */
+.revisions-section {
+  padding: 0;
+}
+
+.revisions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-medium);
+}
+
+.revisions-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.revisions-stats {
+  display: flex;
+  gap: 1rem;
+}
+
+.revisions-stats .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.revisions-stats .stat-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.revisions-stats .stat-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.revisions-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-small);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.filter-btn.active {
+  background: var(--info);
+  color: white;
+  border-color: var(--info);
+}
+
+.filter-btn[data-filter="all"].active {
+  background: var(--info);
+  color: white;
+  border-color: var(--info);
+}
+
+.revisions-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+}
+
+.revision-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-medium);
+  transition: all var(--transition-fast);
+}
+
+.revision-item:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent-primary);
+}
+
+.revision-item.due {
+  border-color: var(--warning);
+  background: rgba(191, 135, 0, 0.1);
+}
+
+.revision-item.overdue {
+  border-color: var(--error);
+  background: rgba(218, 54, 51, 0.1);
+}
+
+.revision-info {
+  width: 100%;
+}
+
+.revision-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.revision-details {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.revision-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+.difficulty-badge {
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-small);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.difficulty-easy {
+  background: rgba(46, 160, 67, 0.2);
+  color: var(--success);
+}
+
+.difficulty-medium {
+  background: rgba(191, 135, 0, 0.2);
+  color: var(--warning);
+}
+
+.difficulty-hard {
+  background: rgba(218, 54, 51, 0.2);
+  color: var(--error);
+}
+
+.revision-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.revision-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: var(--radius-small);
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.revision-btn.calendar {
+  background: var(--info);
+  color: white;
+}
+
+.revision-btn.calendar:hover {
+  background: #3182ce;
+}
+
+.revision-btn.complete {
+  background: var(--success);
+  color: white;
+}
+
+.revision-btn.complete:hover {
+  background: #2d8738;
+}
+
+.revision-btn.visit {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.revision-btn.visit:hover {
+  background: var(--accent-hover);
+}
+
+.revisions-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 1rem 1rem;
+}
+
+.loading-message, .empty-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.upcoming-date {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  margin-top: 0.25rem;
+}
+
+/* Icon styling */
+.section-icon,
+.btn-icon,
+.toggle-icon {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+.section-icon {
+  margin-right: 0.5rem;
+}
+
+.btn-icon {
+  margin-right: 0.3rem;
+}
+
+.toggle-icon {
+  font-size: 0.7rem;
+}
+
 body,
 html {
   font-family: "JetBrains Mono", monospace;

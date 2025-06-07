@@ -34,6 +34,7 @@
       <!-- Navigation Tabs -->
       <nav class="tab-nav">
         <button class="tab-btn active" data-tab="config">Configuration</button>
+        <button class="tab-btn" data-tab="revisions">Revisions</button>
         <button class="tab-btn" data-tab="status">Status</button>
         <button class="tab-btn" data-tab="help">Help</button>
       </nav>
@@ -44,7 +45,7 @@
           <!-- Authentication Section -->
           <div class="form-section">
             <h3 class="section-title">
-              <span class="section-icon">🔐</span>
+              <span class="section-icon">*</span>
               Authentication
             </h3>
             <div class="form-group">
@@ -61,7 +62,7 @@
                   required
                 />
                 <button type="button" class="toggle-password" id="toggle-token">
-                  <span class="toggle-icon">👁</span>
+                  <span class="toggle-icon">•</span>
                 </button>
               </div>
               <div class="field-help">
@@ -76,7 +77,7 @@
           <!-- Repository Section -->
           <div class="form-section">
             <h3 class="section-title">
-              <span class="section-icon">📁</span>
+              <span class="section-icon">+</span>
               Repository
             </h3>
             <div class="form-row">
@@ -127,7 +128,7 @@
           <!-- Notion Section -->
           <div class="form-section">
             <h3 class="section-title">
-              <span class="section-icon">📝</span>
+              <span class="section-icon">@</span>
               Notion Integration
             </h3>
             <div class="form-group">
@@ -151,7 +152,7 @@
                     placeholder="ntn_xxxxxxxxxxxxxxxxxxxx"
                   />
                   <button type="button" class="toggle-password" id="toggle-notion-token">
-                    <span class="toggle-icon">👁</span>
+                    <span class="toggle-icon">•</span>
                   </button>
                 </div>
                 <div class="field-help">
@@ -181,7 +182,7 @@
               </div>
               <div class="form-group">
                 <button type="button" class="btn btn-secondary" id="create-notion-database">
-                  <span class="btn-icon">📝</span>
+                  <span class="btn-icon">+</span>
                   Create Database
                 </button>
                 <div class="field-help">
@@ -197,15 +198,58 @@
           <!-- Action Buttons -->
           <div class="action-section">
             <button type="button" class="btn btn-secondary" id="test-connection">
-              <span class="btn-icon">🔗</span>
+              <span class="btn-icon">?</span>
               Test Connection
             </button>
             <button type="submit" class="btn btn-primary" id="save-config">
-              <span class="btn-icon">💾</span>
+              <span class="btn-icon">></span>
               Save Configuration
             </button>
           </div>
         </form>
+      </section>
+
+      <!-- Revisions Tab -->
+      <section class="tab-content" id="revisions-tab">
+        <div class="revisions-section">
+          <div class="revisions-header">
+            <h3 class="revisions-title">
+              <span class="section-icon">~</span>
+              Problems for Revision
+            </h3>
+            <div class="revisions-stats" id="revisions-stats">
+              <span class="stat-item">
+                <span class="stat-value" id="due-count">0</span>
+                <span class="stat-label">Due</span>
+              </span>
+              <span class="stat-item">
+                <span class="stat-value" id="total-problems">0</span>
+                <span class="stat-label">Total</span>
+              </span>
+            </div>
+          </div>
+          
+          <div class="revisions-filters">
+            <button class="filter-btn" data-filter="due">Due Now</button>
+            <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+            <button class="filter-btn active" data-filter="all">All Problems</button>
+          </div>
+          
+          <div class="revisions-list" id="revisions-list">
+            <div class="loading-message">Loading revision data...</div>
+          </div>
+          
+          <div class="revisions-actions">
+            <button class="btn btn-secondary" id="refresh-revisions">
+              <span class="btn-icon">^</span>
+              Refresh
+            </button>
+            <button class="btn btn-secondary" id="clear-revisions">
+              <span class="btn-icon">x</span>
+              Clear All
+            </button>
+          </div>
+        </div>
       </section>
 
       <!-- Status Tab -->

@@ -6,6 +6,11 @@ let currentPathname = window.location.pathname;
 let sessionStartTime = null;
 let lastActivityTime = Date.now();
 
+// Problem tracking variables
+let problemStartTime = null;
+let mistakeCount = 0;
+let revisionSystem = null;
+
 const fetchQuestionDetails = () => {
   const headingElem = document.querySelector(
     ".text-2xl.font-bold.text-new_primary.dark\\:text-new_dark_primary.relative",
@@ -47,6 +52,9 @@ const urlChangeDetector = setInterval(() => {
     setTimeout(() => {
       fetchQuestionDetails();
       fetchLatestCodeData();
+      // Reset problem tracking for new problem
+      startProblemTracking();
+      setupMistakeTracking();
     }, 4000);
   }
 }, 4000);
@@ -97,6 +105,160 @@ const initGitHubConfig = () => {
       }
     },
   );
+};
+
+// Simple revision system for content script
+const revisionSystemStorage = {
+  storageKey: 'tuf_revision_data',
+  
+  async saveRevisionData(data) {
+    data.lastUpdated = new Date().toISOString();
+    return new Promise((resolve) => {
+      chrome.storage.local.set({ [this.storageKey]: data }, resolve);
+    });
+  },
+  
+  async getRevisionData() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([this.storageKey], (result) => {
+        resolve(result[this.storageKey] || { problems: [], lastUpdated: new Date().toISOString() });
+      });
+    });
+  },
+  
+  generateId() {
+    return 'prob_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  },
+  
+  calculateDifficultyScore(mistakes, timeInMinutes) {
+    let score = 0;
+    
+    // Mistakes scoring (0-3 points)
+    if (mistakes >= 6) score += 3;
+    else if (mistakes >= 3) score += 2;
+    else if (mistakes >= 1) score += 1;
+    
+    // Time scoring (0-3 points)
+    if (timeInMinutes > 15) score += 3;
+    else if (timeInMinutes > 5) score += 2;
+    else if (timeInMinutes > 2) score += 1;
+    
+    return score;
+  },
+  
+  getDifficultyLevel(score) {
+    if (score <= 2) return 'easy';
+    if (score <= 4) return 'medium';
+    return 'hard';
+  },
+  
+  calculateNextRevision(difficultyLevel, revisionCount = 0) {
+    const baseIntervals = [1, 3, 7, 14, 30, 90]; // days
+    const intervalIndex = Math.min(revisionCount, baseIntervals.length - 1);
+    let baseDays = baseIntervals[intervalIndex];
+    
+    // Apply difficulty modifiers
+    switch (difficultyLevel) {
+      case 'easy':
+        break;
+      case 'medium':
+        baseDays = Math.ceil(baseDays * 0.8);
+        break;
+      case 'hard':
+        baseDays = Math.ceil(baseDays * 0.6);
+        break;
+    }
+    
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + baseDays);
+    return nextDate;
+  },
+  
+  async addProblem(problemData) {
+    const { name, link, mistakes, timeInMinutes, solvedDate = new Date() } = problemData;
+    
+    const difficultyScore = this.calculateDifficultyScore(mistakes, timeInMinutes);
+    const difficultyLevel = this.getDifficultyLevel(difficultyScore);
+    const nextRevisionDate = this.calculateNextRevision(difficultyLevel);
+    
+    const problem = {
+      id: this.generateId(),
+      name,
+      link,
+      mistakes,
+      timeInMinutes,
+      solvedDate: solvedDate.toISOString(),
+      difficultyLevel,
+      difficultyScore,
+      revisionCount: 0,
+      nextRevisionDate: nextRevisionDate.toISOString(),
+      lastRevisedDate: null,
+      revisionHistory: []
+    };
+    
+    const existingData = await this.getRevisionData();
+    
+    // Check if problem already exists (by link)
+    const existingIndex = existingData.problems.findIndex(p => p.link === link);
+    
+    if (existingIndex !== -1) {
+      // Update existing problem
+      existingData.problems[existingIndex] = { ...existingData.problems[existingIndex], ...problem };
+    } else {
+      // Add new problem
+      existingData.problems.push(problem);
+    }
+    
+    await this.saveRevisionData(existingData);
+    console.log('Problem added to revision system:', problem);
+    
+    return problem;
+  }
+};
+
+// Initialize revision system
+const initRevisionSystem = () => {
+  revisionSystem = revisionSystemStorage;
+  console.log('Revision system initialized');
+};
+
+// Track problem start time
+const startProblemTracking = () => {
+  problemStartTime = Date.now();
+  mistakeCount = 0;
+  console.log('Started tracking problem solving time');
+};
+
+// Track run button clicks (mistakes)
+const trackMistake = () => {
+  mistakeCount++;
+  console.log(`Mistake tracked: ${mistakeCount}`);
+};
+
+// Setup mistake tracking for run button
+const setupMistakeTracking = () => {
+  // Use MutationObserver to watch for run button
+  const observer = new MutationObserver((mutations) => {
+    const runButton = document.querySelector('div[class*="bg-new_Brand"] span');
+    if (runButton && !runButton.hasAttribute('data-mistake-tracked')) {
+      runButton.setAttribute('data-mistake-tracked', 'true');
+      runButton.addEventListener('click', trackMistake);
+      console.log('Run button found and mistake tracking attached');
+    }
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+  // Also check immediately
+  const runButton = document.querySelector('div[class*="bg-new_Brand"] span');
+  if (runButton && !runButton.hasAttribute('data-mistake-tracked')) {
+    runButton.setAttribute('data-mistake-tracked', 'true');
+    runButton.addEventListener('click', trackMistake);
+    console.log('Run button found immediately and mistake tracking attached');
+  }
 };
 
 // Time tracking functions
@@ -193,6 +355,14 @@ const createOrUpdateFile = async (filePath, content, commitMessage) => {
 const handleSubmissionPush = async (Sdata) => {
   try {
     console.log("Handling submission push...");
+    console.log("Submission data:", Sdata);
+    console.log("Current tracking data:", { 
+      QUES, 
+      mistakeCount, 
+      problemStartTime, 
+      timeElapsed: problemStartTime ? Math.floor((Date.now() - problemStartTime) / 60000) : 0 
+    });
+    
     if (!Sdata.success) return false;
 
     // Re-fetch latest question details and code before pushing
@@ -282,6 +452,47 @@ ${PUBLIC_CODE}`;
       } else {
         console.log("Notion is disabled or not configured");
       }
+      
+      // Add to revision system
+      if (revisionSystem && problemStartTime) {
+        const timeInMinutes = Math.max(1, Math.floor((Date.now() - problemStartTime) / 60000));
+        const problemData = {
+          name: QUES || 'Unknown Problem',
+          link: window.location.href,
+          mistakes: mistakeCount,
+          timeInMinutes: timeInMinutes,
+          solvedDate: new Date()
+        };
+        
+        console.log('Adding problem to revision system with data:', problemData);
+        
+        try {
+          const addedProblem = await revisionSystem.addProblem(problemData);
+          console.log(`✅ Problem successfully added to revision system:`, addedProblem);
+          
+          // Update extension badge with revision count
+          try {
+            const revisionData = await revisionSystem.getRevisionData();
+            const dueCount = revisionData.problems.filter(p => new Date(p.nextRevisionDate) <= new Date()).length;
+            chrome.runtime.sendMessage({
+              action: 'updateBadge',
+              count: dueCount
+            });
+          } catch (badgeError) {
+            console.error('Error updating badge:', badgeError);
+          }
+        } catch (error) {
+          console.error('❌ Error adding problem to revision system:', error);
+        }
+      } else {
+        console.log('❌ Revision system not ready:', { 
+          revisionSystem: !!revisionSystem, 
+          problemStartTime: !!problemStartTime,
+          mistakeCount: mistakeCount,
+          QUES: QUES,
+          currentTime: Date.now()
+        });
+      }
     } else {
       console.error("Failed to push to GitHub");
     }
@@ -304,6 +515,7 @@ window.addEventListener("message", async (event) => {
   if (event.data.type === "SUBMISSION_RESPONSE") {
     const submissionData = event.data.payload;
     console.log("Submission success status:", submissionData.success);
+    console.log("Current problem data:", { QUES, mistakeCount, problemStartTime });
     if (submissionData.success === true) {
       await handleSubmissionPush(submissionData);
     } else {
@@ -401,6 +613,11 @@ initGitHubConfig();
 injectInterceptor();
 initSubmitButtonMonitor();
 startTimeTracking();
+
+// Initialize revision system immediately
+initRevisionSystem();
+startProblemTracking();
+setupMistakeTracking();
 
 // Clean up intervals when the page is unloaded
 window.addEventListener("beforeunload", () => {

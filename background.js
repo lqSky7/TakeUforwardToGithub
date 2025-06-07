@@ -38,6 +38,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
+  
+  if (request.action === 'updateBadge') {
+    updateExtensionBadge(request.count);
+    sendResponse({ success: true });
+    return true;
+  }
 });
 
 async function handleNotionAPICall(data) {
@@ -266,4 +272,17 @@ function getTopicsFromText(topic) {
   
   const topics = topic.split(/[,;]/).map(t => t.trim()).filter(t => t);
   return topics.map(name => ({ name })).slice(0, 5);
+}
+
+function updateExtensionBadge(count) {
+  try {
+    if (count > 0) {
+      chrome.action.setBadgeText({ text: count.toString() });
+      chrome.action.setBadgeBackgroundColor({ color: '#ff6b35' });
+    } else {
+      chrome.action.setBadgeText({ text: '' });
+    }
+  } catch (error) {
+    console.error('Error updating badge:', error);
+  }
 }
