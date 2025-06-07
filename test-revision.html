@@ -132,32 +132,43 @@
 
             const testProblems = [
                 {
-                    name: "Two Sum",
+                    name: "Your Example Problem",
+                    link: "https://takeuforward.org/plus/dsa/arrays/leaders-in-array",
+                    mistakes: 3,
+                    timeInMinutes: 1,
+                    solvedDate: new Date() // Should give 3 days
+                },
+                {
+                    name: "No Mistakes Fast",
                     link: "https://takeuforward.org/plus/dsa/arrays/two-sum",
-                    mistakes: 1,
-                    timeInMinutes: 3,
-                    solvedDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
-                },
-                {
-                    name: "Binary Search",
-                    link: "https://takeuforward.org/plus/dsa/binary-search/basic-binary-search",
-                    mistakes: 5,
-                    timeInMinutes: 20,
-                    solvedDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
-                },
-                {
-                    name: "Merge Sort",
-                    link: "https://takeuforward.org/plus/dsa/sorting/merge-sort",
                     mistakes: 0,
                     timeInMinutes: 2,
-                    solvedDate: new Date() // today
+                    solvedDate: new Date() // Should give 7 days (boosted to ~8 for fast solve)
+                },
+                {
+                    name: "Many Mistakes Slow",
+                    link: "https://takeuforward.org/plus/dsa/binary-search/basic-binary-search",
+                    mistakes: 6,
+                    timeInMinutes: 20,
+                    solvedDate: new Date() // Should give 1 day (reduced for slow solve)
+                },
+                {
+                    name: "One Mistake Normal Time",
+                    link: "https://takeuforward.org/plus/dsa/sorting/merge-sort",
+                    mistakes: 1,
+                    timeInMinutes: 5,
+                    solvedDate: new Date() // Should give 3 days
                 }
             ];
 
             try {
                 for (const problem of testProblems) {
-                    await revisionSystem.addProblem(problem);
-                    log('add-output', `Added: ${problem.name} (${problem.mistakes} mistakes, ${problem.timeInMinutes}min)`);
+                    const addedProblem = await revisionSystem.addProblem(problem);
+                    const daysUntilRevision = Math.ceil((new Date(addedProblem.nextRevisionDate) - new Date()) / (1000 * 60 * 60 * 24));
+                    log('add-output', `Added: ${problem.name}`);
+                    log('add-output', `  Mistakes: ${problem.mistakes}, Time: ${problem.timeInMinutes}min`);
+                    log('add-output', `  Next revision: ${daysUntilRevision} days`);
+                    log('add-output', '');
                 }
                 log('add-output', 'All test problems added successfully');
             } catch (error) {

@@ -5,16 +5,58 @@ class RevisionSystem {
     this.storageKey = 'tuf_revision_data';
   }
 
-  // Calculate difficulty score based on mistakes and time taken
+  // Calculate revision interval directly based on mistakes and time
+  calculateRevisionInterval(mistakes, timeInMinutes, revisionCount = 0) {
+    // Base calculation: Start with mistakes as primary factor
+    let baseDays;
+    
+    if (mistakes === 0) {
+      baseDays = 7; // No mistakes = 1 week
+    } else if (mistakes === 1) {
+      baseDays = 3; // 1 mistake = 3 days
+    } else if (mistakes === 2) {
+      baseDays = 3; // 2 mistakes = 3 days
+    } else if (mistakes >= 3 && mistakes <= 5) {
+      baseDays = 3; // 3-5 mistakes = 3 days
+    } else {
+      baseDays = 1; // 6+ mistakes = 1 day (really struggling)
+    }
+    
+    // Time modifier: Adjust based on how long it took
+    if (timeInMinutes <= 2) {
+      // Very fast solve - increase interval slightly
+      baseDays = Math.ceil(baseDays * 1.2);
+    } else if (timeInMinutes > 15) {
+      // Very slow solve - decrease interval
+      baseDays = Math.ceil(baseDays * 0.8);
+    }
+    // Normal time (2-15 min) - no change
+    
+    // Progressive intervals for repeated revisions
+    if (revisionCount > 0) {
+      const multipliers = [1, 1.5, 2, 3, 5, 7]; // Progressive multipliers
+      const multiplier = multipliers[Math.min(revisionCount, multipliers.length - 1)];
+      baseDays = Math.ceil(baseDays * multiplier);
+    }
+    
+    // Cap at reasonable limits
+    baseDays = Math.max(1, Math.min(baseDays, 90));
+    
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + baseDays);
+    return nextDate;
+  }
+
+  // Calculate difficulty score for display purposes only
   calculateDifficultyScore(mistakes, timeInMinutes) {
     let score = 0;
     
-    // Mistakes scoring (0-3 points)
+    // Mistakes scoring
     if (mistakes >= 6) score += 3;
     else if (mistakes >= 3) score += 2;
     else if (mistakes >= 1) score += 1;
     
-    // Time scoring (0-3 points)
+    // Time scoring
     if (timeInMinutes > 15) score += 3;
     else if (timeInMinutes > 5) score += 2;
     else if (timeInMinutes > 2) score += 1;
@@ -22,34 +64,11 @@ class RevisionSystem {
     return score;
   }
 
-  // Get difficulty level from score
+  // Get difficulty level from score (for display only)
   getDifficultyLevel(score) {
     if (score <= 2) return 'easy';
     if (score <= 4) return 'medium';
     return 'hard';
-  }
-
-  // Calculate next revision date
-  calculateNextRevision(difficultyLevel, revisionCount = 0) {
-    const intervalIndex = Math.min(revisionCount, this.baseIntervals.length - 1);
-    let baseDays = this.baseIntervals[intervalIndex];
-    
-    // Apply difficulty modifiers
-    switch (difficultyLevel) {
-      case 'easy':
-        // Use base intervals
-        break;
-      case 'medium':
-        baseDays = Math.ceil(baseDays * 0.8); // 20% reduction
-        break;
-      case 'hard':
-        baseDays = Math.ceil(baseDays * 0.6); // 40% reduction
-        break;
-    }
-    
-    const nextDate = new Date();
-    nextDate.setDate(nextDate.getDate() + baseDays);
-    return nextDate;
   }
 
   // Add a new problem to revision tracking
@@ -58,7 +77,7 @@ class RevisionSystem {
     
     const difficultyScore = this.calculateDifficultyScore(mistakes, timeInMinutes);
     const difficultyLevel = this.getDifficultyLevel(difficultyScore);
-    const nextRevisionDate = this.calculateNextRevision(difficultyLevel);
+    const nextRevisionDate = this.calculateRevisionInterval(mistakes, timeInMinutes);
     
     const problem = {
       id: this.generateId(),
@@ -111,11 +130,11 @@ class RevisionSystem {
     if (wasEasy) {
       // Successful revision - increase interval
       problem.revisionCount += 1;
-      problem.nextRevisionDate = this.calculateNextRevision(problem.difficultyLevel, problem.revisionCount).toISOString();
+      problem.nextRevisionDate = this.calculateRevisionInterval(problem.mistakes, problem.timeInMinutes, problem.revisionCount).toISOString();
     } else {
       // Failed revision - reset to shorter interval
       problem.revisionCount = Math.max(0, problem.revisionCount - 1);
-      problem.nextRevisionDate = this.calculateNextRevision('hard', 0).toISOString();
+      problem.nextRevisionDate = this.calculateRevisionInterval(problem.mistakes, problem.timeInMinutes, 0).toISOString();
     }
     
     await this.saveRevisionData(data);

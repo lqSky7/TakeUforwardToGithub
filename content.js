@@ -130,15 +130,57 @@ const revisionSystemStorage = {
     return 'prob_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   },
   
+  // Calculate revision interval directly based on mistakes and time
+  calculateRevisionInterval(mistakes, timeInMinutes, revisionCount = 0) {
+    // Base calculation: Start with mistakes as primary factor
+    let baseDays;
+    
+    if (mistakes === 0) {
+      baseDays = 7; // No mistakes = 1 week
+    } else if (mistakes === 1) {
+      baseDays = 3; // 1 mistake = 3 days
+    } else if (mistakes === 2) {
+      baseDays = 3; // 2 mistakes = 3 days
+    } else if (mistakes >= 3 && mistakes <= 5) {
+      baseDays = 3; // 3-5 mistakes = 3 days
+    } else {
+      baseDays = 1; // 6+ mistakes = 1 day (really struggling)
+    }
+    
+    // Time modifier: Adjust based on how long it took
+    if (timeInMinutes <= 2) {
+      // Very fast solve - increase interval slightly
+      baseDays = Math.ceil(baseDays * 1.2);
+    } else if (timeInMinutes > 15) {
+      // Very slow solve - decrease interval
+      baseDays = Math.ceil(baseDays * 0.8);
+    }
+    // Normal time (2-15 min) - no change
+    
+    // Progressive intervals for repeated revisions
+    if (revisionCount > 0) {
+      const multipliers = [1, 1.5, 2, 3, 5, 7]; // Progressive multipliers
+      const multiplier = multipliers[Math.min(revisionCount, multipliers.length - 1)];
+      baseDays = Math.ceil(baseDays * multiplier);
+    }
+    
+    // Cap at reasonable limits
+    baseDays = Math.max(1, Math.min(baseDays, 90));
+    
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + baseDays);
+    return nextDate;
+  },
+
   calculateDifficultyScore(mistakes, timeInMinutes) {
     let score = 0;
     
-    // Mistakes scoring (0-3 points)
+    // Mistakes scoring
     if (mistakes >= 6) score += 3;
     else if (mistakes >= 3) score += 2;
     else if (mistakes >= 1) score += 1;
     
-    // Time scoring (0-3 points)
+    // Time scoring
     if (timeInMinutes > 15) score += 3;
     else if (timeInMinutes > 5) score += 2;
     else if (timeInMinutes > 2) score += 1;
@@ -152,34 +194,12 @@ const revisionSystemStorage = {
     return 'hard';
   },
   
-  calculateNextRevision(difficultyLevel, revisionCount = 0) {
-    const baseIntervals = [1, 3, 7, 14, 30, 90]; // days
-    const intervalIndex = Math.min(revisionCount, baseIntervals.length - 1);
-    let baseDays = baseIntervals[intervalIndex];
-    
-    // Apply difficulty modifiers
-    switch (difficultyLevel) {
-      case 'easy':
-        break;
-      case 'medium':
-        baseDays = Math.ceil(baseDays * 0.8);
-        break;
-      case 'hard':
-        baseDays = Math.ceil(baseDays * 0.6);
-        break;
-    }
-    
-    const nextDate = new Date();
-    nextDate.setDate(nextDate.getDate() + baseDays);
-    return nextDate;
-  },
-  
   async addProblem(problemData) {
     const { name, link, mistakes, timeInMinutes, solvedDate = new Date() } = problemData;
     
     const difficultyScore = this.calculateDifficultyScore(mistakes, timeInMinutes);
     const difficultyLevel = this.getDifficultyLevel(difficultyScore);
-    const nextRevisionDate = this.calculateNextRevision(difficultyLevel);
+    const nextRevisionDate = this.calculateRevisionInterval(mistakes, timeInMinutes);
     
     const problem = {
       id: this.generateId(),
