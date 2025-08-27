@@ -225,8 +225,34 @@ const handleSubmissionPush = async (Sdata) => {
             `- Time: ${Sdata.averageTime}\n` +
             `- Memory: ${Sdata.averageMemory}`;
 
-        const fileContent = `// Solution for: ${QUES}
-${PUBLIC_CODE}`;
+        // Get the appropriate language identifier for markdown code blocks
+        const languageId = 
+            SELECTED_LANGUAGE === "cpp" ? "cpp" :
+            SELECTED_LANGUAGE === "python" ? "python" :
+            SELECTED_LANGUAGE === "javascript" ? "javascript" :
+            SELECTED_LANGUAGE === "java" ? "java" :
+            "text";
+
+        const fileContent = `# ${QUES}
+
+## Problem Description
+${DESCRIPTION}
+
+## Solution
+
+\`\`\`${languageId}
+${PUBLIC_CODE}
+\`\`\`
+
+## Problem Link
+${window.location.href}
+
+## Stats
+- Success: ${Sdata.success}
+- Test Cases: ${Sdata.totalTestCases}
+- Time: ${Sdata.averageTime}
+- Memory: ${Sdata.averageMemory}
+`;
 
         const urlPath = window.location.pathname
             .replace("/plus/", "") // Remove 'plus'
@@ -241,16 +267,8 @@ ${PUBLIC_CODE}`;
         // Create directory path from URL parts
         const dirPath = urlPath.join("/");
 
-        const fileExtension =
-            SELECTED_LANGUAGE === "cpp"
-                ? "cpp"
-                : SELECTED_LANGUAGE === "python"
-                  ? "py"
-                  : SELECTED_LANGUAGE === "javascript"
-                    ? "js"
-                    : "txt";
-
-        const filePath = `${dirPath}/solution.${fileExtension}`;
+        // Always use .md extension for all solutions to ensure consistency
+        const filePath = `${dirPath}/solution.md`;
         const success = await createOrUpdateFile(
             filePath,
             fileContent,
