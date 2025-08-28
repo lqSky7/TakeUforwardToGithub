@@ -4,10 +4,11 @@ let currentPathname = window.location.pathname;
 
 const fetchQuestionDetails = () => {
     const headingElem = document.querySelector(
-        ".text-2xl.font-bold.text-new_primary.dark\\:text-new_dark_primary.relative",
+        ".text-2xl.font-bold.text-new_primary.dark\\:text-new_dark_primary",
     );
-    const paragraphElem = document.querySelector("p.text-new_secondary");
-    // <p class="mt-6 w-full text-new_secondary text-[14px] dark:text-zinc-200"> we use a more specific selector now
+
+    const paragraphElem = document.querySelector(".mt-6.w-full.text-new_secondary.text-\\[14px\\].dark\\:text-zinc-200");
+
 
     if (headingElem && paragraphElem) {
         QUES = headingElem.textContent?.trim() || "";
