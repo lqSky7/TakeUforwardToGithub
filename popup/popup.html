@@ -39,6 +39,9 @@
                     Configuration
                 </button>
                 <button class="tab-btn" data-tab="status">Status</button>
+                <button class="tab-btn" data-tab="prediction">
+                    Prediction
+                </button>
                 <button class="tab-btn" data-tab="help">Help</button>
             </nav>
 
@@ -308,6 +311,271 @@
                                 >
                                 <span class="stat-label">Total Commits</span>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Prediction Tab -->
+            <section class="tab-content" id="prediction-tab">
+                <div class="prediction-container">
+                    <!-- Prediction Controls -->
+                    <div class="form-section">
+                        <h3 class="section-title">
+                            <span class="title-icon">🎯</span>
+                            Smart Task Scheduler
+                        </h3>
+                        <div class="prediction-controls">
+                            <div class="control-group">
+                                <label class="form-label">
+                                    <span class="label-text"
+                                        >Tasks to Schedule</span
+                                    >
+                                </label>
+                                <input
+                                    type="number"
+                                    class="form-input"
+                                    id="target-count"
+                                    value="10"
+                                    min="1"
+                                    max="50"
+                                    step="1"
+                                />
+                            </div>
+                            <div class="control-group">
+                                <label class="form-label">
+                                    <span class="label-text">Focus Mode</span>
+                                </label>
+                                <select class="form-select" id="focus-mode">
+                                    <option value="0">
+                                        Only Revise (100% revision)
+                                    </option>
+                                    <option value="1" selected>
+                                        Focus Revision (70% revision, 30% new)
+                                    </option>
+                                    <option value="2">
+                                        Focus New (30% revision, 70% new)
+                                    </option>
+                                    <option value="3">
+                                        Only New (100% new)
+                                    </option>
+                                </select>
+                                <div
+                                    class="focus-description"
+                                    id="focus-description"
+                                >
+                                    70% revision problems, 30% new problems
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="form-label">
+                                    <span class="label-text">Grandparent Filter</span>
+                                </label>
+                                <select class="form-select" id="grandparent-filter" multiple size="3">
+                                    <option value="">All Categories</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label class="form-label">
+                                    <span class="label-text">Parent Topic Filter</span>
+                                </label>
+                                <select class="form-select" id="parent-filter">
+                                    <option value="">All Topics</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <div class="button-group">
+                                    <button
+                                        type="button"
+                                        class="btn btn-primary"
+                                        id="generate-schedule"
+                                    >
+                                        <span class="btn-icon">🔮</span>
+                                        Generate Schedule
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-secondary"
+                                        id="clear-schedule"
+                                        title="Clear saved schedule"
+                                    >
+                                        <span class="btn-icon">🗑️</span>
+                                        Clear Schedule
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Section -->
+                    <div
+                        class="form-section"
+                        id="prediction-stats"
+                        style="display: none"
+                    >
+                        <h3 class="section-title">
+                            <span class="title-icon">📊</span>
+                            Statistics
+                        </h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-number" id="total-tasks">
+                                    -
+                                </div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="active-tasks">
+                                    -
+                                </div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="solved-tasks">
+                                    -
+                                </div>
+                                <div class="stat-label">Solved</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="unsolved-tasks">
+                                    -
+                                </div>
+                                <div class="stat-label">Unsolved</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="ignored-tasks">
+                                    -
+                                </div>
+                                <div class="stat-label">Ignored</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="scheduled-count">
+                                    -
+                                </div>
+                                <div class="stat-label">Scheduled</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div
+                        class="form-section"
+                        id="prediction-results"
+                        style="display: none"
+                    >
+                        <h3 class="section-title">
+                            <span class="title-icon">📋</span>
+                            Today's Schedule
+                            <span class="schedule-timestamp" id="schedule-timestamp"></span>
+                        </h3>
+                        <div class="task-schedule" id="task-list">
+                            <!-- Tasks will be populated here -->
+                        </div>
+                        <div class="schedule-actions" style="margin-top: 12px">
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                id="manage-ignored"
+                                style="
+                                    display: none;
+                                    font-size: 10px;
+                                    padding: 6px 12px;
+                                "
+                            >
+                                <span class="btn-icon">👁️</span>
+                                Manage Ignored Tasks
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div
+                        class="loading-state"
+                        id="prediction-loading"
+                        style="display: none"
+                    >
+                        <div class="loading-spinner"></div>
+                        <span class="loading-text"
+                            >Generating smart schedule...</span
+                        >
+                    </div>
+
+                    <!-- Error State -->
+                    <div
+                        class="error-message"
+                        id="prediction-error"
+                        style="display: none"
+                    >
+                        <span class="error-icon">⚠️</span>
+                        <span class="error-text"></span>
+                    </div>
+
+                    <!-- Algorithm Info -->
+                    <div class="form-section">
+                        <details class="algorithm-info">
+                            <summary class="info-summary">
+                                How does the algorithm work?
+                            </summary>
+                            <div class="info-content">
+                                <p>
+                                    The prediction algorithm intelligently
+                                    schedules coding problems based on:
+                                </p>
+                                <ul class="info-list">
+                                    <li>
+                                        <strong>Revision Score:</strong> Time
+                                        since last solve, difficulty, and
+                                        attempts
+                                    </li>
+                                    <li>
+                                        <strong>FIFO for New:</strong> Unsolved
+                                        problems in chronological order
+                                    </li>
+                                    <li>
+                                        <strong>Priority Queue:</strong> Solved
+                                        problems ranked by revision urgency
+                                    </li>
+                                    <li>
+                                        <strong>Focus Modes:</strong> Adjust
+                                        balance between new and revision
+                                        problems
+                                    </li>
+                                    <li>
+                                        <strong>Ignore Feature:</strong> Click
+                                        the red minus button to exclude tasks
+                                        from scheduling
+                                    </li>
+                                </ul>
+                            </div>
+                        </details>
+                    </div>
+
+                    <!-- Ignored Tasks Management Modal -->
+                    <div
+                        class="form-section"
+                        id="ignored-tasks-section"
+                        style="display: none"
+                    >
+                        <h3 class="section-title">
+                            <span class="title-icon">👁️</span>
+                            Ignored Tasks
+                        </h3>
+                        <div
+                            class="ignored-tasks-list"
+                            id="ignored-tasks-list"
+                            style="max-height: 200px; overflow-y: auto"
+                        >
+                            <!-- Ignored tasks will be populated here -->
+                        </div>
+                        <div style="margin-top: 12px">
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                id="close-ignored"
+                                style="font-size: 10px; padding: 6px 12px"
+                            >
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>

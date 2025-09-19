@@ -1,45 +1,40 @@
 {
-    "name": "TakeUForwardToGithub",
-    "version": "2.0",
-    "manifest_version": 3,
-    "description": "Auto push takeuforward.org solutions to your github repo",
-    "permissions": [
-        "storage",
-        "scripting",
-        "activeTab",
-        "tabs",
-        "webRequest"
-      ],
-      "icons": {
-        "16": "assets/16.png",
-        "48": "assets/48.png",
-        "128": "assets/128.png"
-      },
+  "name": "TakeUForwardToGithub",
+  "version": "3.3.1",
+  "manifest_version": 3,
+  "description": "Auto push takeuforward.org solutions to your github repo",
+  "permissions": ["storage", "scripting", "activeTab", "tabs", "webRequest"],
+  "icons": {
+    "16": "assets/16.png",
+    "48": "assets/48.png",
+    "128": "assets/128.png"
+  },
 
-      "web_accessible_resources": [
+  "web_accessible_resources": [
     {
-      "resources": ["interceptor.js"],
+      "resources": ["interceptor.js", "data.json", "popup/prediction.js"],
       "matches": ["<all_urls>"]
-    }],
-
-      "host_permissions": [
-        "https://takeuforward.org/*",
-        "https://api.github.com/*",
-        "*://*.takeuforward.org/*",
-        "https://api.notion.com/*"
-    ],
-    "background": {
-      "service_worker": "background.js"
-    },
-    "content_scripts": [
-      {
-        "matches": ["https://*.takeuforward.org/*"],
-        "js": ["content.js"],
-        "run_at": "document_end"
-      }
-    ],
-    "action": {
-      "default_title": "TakeUForwardToGithub",
-      "default_popup": "popup/popup.html"
     }
+  ],
+
+  "host_permissions": [
+    "https://takeuforward.org/*",
+    "https://api.github.com/*",
+    "*://*.takeuforward.org/*",
+    "https://api.notion.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.takeuforward.org/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_title": "TakeUForwardToGithub",
+    "default_popup": "popup/popup.html"
   }
+}
