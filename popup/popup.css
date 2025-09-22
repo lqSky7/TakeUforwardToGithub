@@ -1291,6 +1291,43 @@ select:focus {
     color: var(--text-secondary);
 }
 
+.info-content h4 {
+    font-size: 10px;
+    color: var(--text-primary);
+    margin: 12px 0 6px 0;
+    font-weight: 600;
+}
+
+.info-content h5 {
+    font-size: 9px;
+    color: var(--text-secondary);
+    margin: 8px 0 4px 0;
+    font-weight: 600;
+}
+
+.info-content code {
+    background: var(--bg-overlay);
+    padding: 1px 3px;
+    border-radius: 3px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 8px;
+    color: var(--accent-primary);
+    border: 1px solid var(--border-subtle);
+}
+
+.info-content ul ul {
+    margin: 4px 0 4px 12px;
+}
+
+.info-content ol {
+    padding-left: 16px;
+    margin: 6px 0;
+}
+
+.info-content ol li {
+    margin-bottom: 2px;
+}
+
 .title-icon {
     font-size: 12px;
     filter: grayscale(1);

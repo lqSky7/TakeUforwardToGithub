@@ -517,34 +517,128 @@
                                 How does the algorithm work?
                             </summary>
                             <div class="info-content">
+                                <h4>🏗️ System Architecture</h4>
                                 <p>
-                                    The prediction algorithm intelligently
-                                    schedules coding problems based on:
+                                    The TakeUforward GitHub Bridge extension implements a sophisticated task scheduling system
+                                    with persistent storage, dynamic filtering, and intelligent algorithm-based recommendations.
                                 </p>
+
+                                <h4>📊 Data Pipeline</h4>
                                 <ul class="info-list">
                                     <li>
-                                        <strong>Revision Score:</strong> Time
-                                        since last solve, difficulty, and
-                                        attempts
+                                        <strong>Data Source:</strong> <code>data.json</code> contains problem metadata with
+                                        <code>name</code>, <code>difficulty</code>, <code>solved</code> status, and new properties:
+                                        <code>grandparent</code>, <code>parent_topic</code>, <code>problem_link</code>
                                     </li>
                                     <li>
-                                        <strong>FIFO for New:</strong> Unsolved
-                                        problems in chronological order
+                                        <strong>Loading:</strong> <code>popup.js</code> fetches <code>../data.json</code> via
+                                        <code>fetch()</code> and loads <code>prediction.js</code> dynamically
                                     </li>
                                     <li>
-                                        <strong>Priority Queue:</strong> Solved
-                                        problems ranked by revision urgency
+                                        <strong>Persistence:</strong> User preferences and generated schedules saved to
+                                        <code>chrome.storage.local</code>
+                                    </li>
+                                </ul>
+
+                                <h4>🎯 Prediction Algorithm (<code>scheduleToday()</code>)</h4>
+                                <p>The core algorithm implements a dual-queue system with priority-based scheduling:</p>
+
+                                <h5>Queue A: New Problems (FIFO)</h5>
+                                <ul class="info-list">
+                                    <li>Filters unsolved problems: <code>task.solved.value === false && !task.ignored</code></li>
+                                    <li>Maintains strict chronological order from <code>data.json</code></li>
+                                    <li>Applies category filters: <code>grandparent</code> and <code>parent_topic</code></li>
+                                </ul>
+
+                                <h5>Queue B: Revision Problems (Priority Queue)</h5>
+                                <ul class="info-list">
+                                    <li>Uses <code>MaxHeap</code> for O(log n) priority operations</li>
+                                    <li>Calculates revision score: <code>scoreRevision(nowMs, task)</code></li>
+                                    <li>Score formula: <code>0.5 × A + 0.3 × T + 0.2 × D + ε</code></li>
+                                    <li>Where:
+                                        <ul>
+                                            <li><code>A = clamp(ageDays / 30)</code> - Recency (0-30 days normalized)</li>
+                                            <li><code>T = clamp(tries / 5)</code> - Attempts (0-5 tries normalized)</li>
+                                            <li><code>D = clamp(difficulty / 2)</code> - Difficulty (0-2 scale)</li>
+                                            <li><code>ε</code> - Small random noise for tie-breaking</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+
+                                <h4>⚖️ Focus Mode Distribution</h4>
+                                <p><code>splitQuota(N, mode)</code> allocates tasks between revision and new problems:</p>
+                                <ul class="info-list">
+                                    <li><strong>Only Revise (0):</strong> <code>{rev: N, new: 0}</code></li>
+                                    <li><strong>Focus Revision (1):</strong> <code>{rev: 0.7N, new: 0.3N}</code></li>
+                                    <li><strong>Focus New (2):</strong> <code>{rev: 0.3N, new: 0.7N}</code></li>
+                                    <li><strong>Only New (3):</strong> <code>{rev: 0, new: N}</code></li>
+                                </ul>
+
+                                <h4>🔄 Scheduling Logic</h4>
+                                <ol class="info-list">
+                                    <li>Fill revision quota from priority queue (highest scores first)</li>
+                                    <li>Fill new problems quota from FIFO queue (chronological order)</li>
+                                    <li>If under target, fill remaining with new problems (maintain FIFO)</li>
+                                    <li>If still under target, fill remaining with revision problems</li>
+                                </ol>
+
+                                <h4>🎛️ Dynamic Filtering System</h4>
+                                <ul class="info-list">
+                                    <li>
+                                        <strong>Multi-select Grandparent:</strong> Array-based filtering with
+                                        <code>grandparent.includes(task.grandparent)</code>
                                     </li>
                                     <li>
-                                        <strong>Focus Modes:</strong> Adjust
-                                        balance between new and revision
-                                        problems
+                                        <strong>Parent Topic Cascade:</strong> <code>updateParentTopicOptions()</code>
+                                        dynamically populates based on selected grandparents
                                     </li>
                                     <li>
-                                        <strong>Ignore Feature:</strong> Click
-                                        the red minus button to exclude tasks
-                                        from scheduling
+                                        <strong>Real-time Updates:</strong> Filter changes trigger immediate
+                                        parent topic list regeneration
                                     </li>
+                                </ul>
+
+                                <h4>💾 Persistence & State Management</h4>
+                                <ul class="info-list">
+                                    <li>
+                                        <strong>Schedule Storage:</strong> Generated schedules saved with metadata
+                                        (timestamp, filters, settings) to <code>chrome.storage.local</code>
+                                    </li>
+                                    <li>
+                                        <strong>Auto-restore:</strong> <code>loadScheduledTasks()</code> restores
+                                        previous session's schedule on popup load
+                                    </li>
+                                    <li>
+                                        <strong>Ignore Status:</strong> User exclusions persisted across sessions
+                                    </li>
+                                    <li>
+                                        <strong>Settings Memory:</strong> Target count, focus mode, and filter
+                                        selections automatically restored
+                                    </li>
+                                </ul>
+
+                                <h4>🔗 Integration Features</h4>
+                                <ul class="info-list">
+                                    <li>
+                                        <strong>Problem Links:</strong> Direct LeetCode/problem links via
+                                        <code>task.problem_link</code> with 🔗 icon
+                                    </li>
+                                    <li>
+                                        <strong>Visual Feedback:</strong> Timestamp indicators show schedule freshness
+                                        ("generated 2h 15m ago")
+                                    </li>
+                                    <li>
+                                        <strong>Smart Buttons:</strong> "Generate Schedule" → "Update Schedule" when
+                                        saved schedule exists
+                                    </li>
+                                </ul>
+
+                                <h4>⚡ Performance Optimizations</h4>
+                                <ul class="info-list">
+                                    <li><strong>Heap Operations:</strong> O(log n) for priority queue insertions/extractions</li>
+                                    <li><strong>Linear Filtering:</strong> O(n) single-pass filtering with early termination</li>
+                                    <li><strong>Lazy Loading:</strong> Prediction script loaded only when needed</li>
+                                    <li><strong>Debounced Updates:</strong> Filter changes trigger efficient UI updates</li>
                                 </ul>
                             </div>
                         </details>
