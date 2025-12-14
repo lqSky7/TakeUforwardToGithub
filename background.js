@@ -4,7 +4,9 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Handle messages from content script and popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("Background received message:", request.action);
   if (request.action === 'notionAPI') {
+    console.log("Handling notionAPI call...");
     handleNotionAPICall(request.data)
       .then(response => sendResponse({ success: true, data: response }))
       .catch(error => sendResponse({ success: false, error: error.message }));
@@ -12,6 +14,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   
   if (request.action === 'createNotionDatabase') {
+    console.log("Creating Notion database...");
     createNotionDatabase(request.token, request.pageId)
       .then(databaseId => sendResponse({ success: true, databaseId }))
       .catch(error => sendResponse({ success: false, error: error.message }));
@@ -19,6 +22,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   
   if (request.action === 'findNotionPage') {
+    console.log("Finding Notion page...");
     findNotionPageByName(request.token, request.pageName)
       .then(pageId => sendResponse({ success: true, pageId }))
       .catch(error => sendResponse({ success: false, error: error.message }));
@@ -26,6 +30,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   
   if (request.action === 'testNotionConnection') {
+    console.log("Testing Notion connection...");
     testNotionConnection(request.token)
       .then(isValid => sendResponse({ success: true, isValid }))
       .catch(error => sendResponse({ success: false, error: error.message }));
@@ -33,6 +38,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   
   if (request.action === 'addProblemToNotion') {
+    console.log("Adding problem to Notion:", request.problemData);
     addProblemToNotion(request.config, request.problemData)
       .then(result => sendResponse({ success: true, result }))
       .catch(error => sendResponse({ success: false, error: error.message }));
@@ -184,13 +190,16 @@ async function createNotionDatabase(token, pageId) {
 }
 
 async function addProblemToNotion(config, problemData) {
+  console.log("Adding problem to Notion with config:", config, "data:", problemData);
   if (!config.enabled || !config.token || !config.databaseId) {
+    console.log("Notion config incomplete");
     return false;
   }
 
   try {
     const dateSolved = new Date().toISOString().split('T')[0];
     const nextReview = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    console.log("Dates:", { dateSolved, nextReview });
 
     const response = await fetch('https://api.notion.com/v1/pages', {
       method: 'POST',

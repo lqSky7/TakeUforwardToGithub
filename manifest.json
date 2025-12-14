@@ -1,6 +1,6 @@
 {
   "name": "TakeUForwardToGithub",
-  "version": "3.3.1",
+  "version": "3.5",
   "manifest_version": 3,
   "description": "Auto push takeuforward.org solutions to your github repo",
   "permissions": ["storage", "scripting", "activeTab", "tabs", "webRequest"],
@@ -12,7 +12,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["interceptor.js", "data.json", "popup/prediction.js"],
+      "resources": ["interceptor.js"],
       "matches": ["<all_urls>"]
     }
   ],

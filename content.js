@@ -1,64 +1,47 @@
 let QUES = "";
 let DESCRIPTION = "";
 let currentPathname = window.location.pathname;
+let PROBLEM_SLUG = "";
+let SELECTED_LANGUAGE = "";
+let PUBLIC_CODE = "";
+let waitingForCode = false;
 
 const fetchQuestionDetails = () => {
-    const headingElem = document.querySelector(
-        ".text-2xl.font-bold.text-new_primary.dark\\:text-new_dark_primary",
-    );
+    console.log("Fetching question details...");
+    const headingElem = document.querySelector('h1.text-xl.font-bold');
 
-    const paragraphElem = document.querySelector(".mt-6.w-full.text-new_secondary.text-\\[14px\\].dark\\:text-zinc-200");
+    const paragraphElem = document.querySelector('.tuf-text-14');
 
 
     if (headingElem && paragraphElem) {
         QUES = headingElem.textContent?.trim() || "";
         DESCRIPTION = paragraphElem.textContent?.trim() || "";
         console.log("Question details fetched:", QUES);
-    }
-};
-
-const fetchLatestCodeData = () => {
-    const storedData = localStorage.getItem("storedData");
-    const parsedData = JSON.parse(storedData || "[]");
-
-    if (parsedData.length > 0) {
-        const { problemSlug, selectedLanguage, publicCodeOfSelected } =
-            parsedData.at(-1);
-        PROBLEM_SLUG = problemSlug;
-        SELECTED_LANGUAGE = selectedLanguage;
-        PUBLIC_CODE = publicCodeOfSelected;
-        console.log(
-            "Latest code data fetched for language:",
-            SELECTED_LANGUAGE,
-        );
+    } else {
+        console.log("Question elements not found:", { headingElem, paragraphElem });
     }
 };
 
 const urlChangeDetector = setInterval(() => {
     if (currentPathname !== window.location.pathname) {
-        console.log(
-            "Path changed from",
-            currentPathname,
-            "to",
-            window.location.pathname,
-        );
         currentPathname = window.location.pathname;
 
         setTimeout(() => {
             fetchQuestionDetails();
-            fetchLatestCodeData();
         }, 4000);
     }
 }, 4000);
 
 const pollForQuestion = setInterval(() => {
+    console.log("Polling for question details...");
     fetchQuestionDetails();
     if (QUES && DESCRIPTION) {
+        console.log("Question polling stopped, details found.");
         clearInterval(pollForQuestion);
+    } else {
+        console.log("Question details not yet available.");
     }
 }, 1000);
-
-fetchLatestCodeData();
 
 const GITHUB_CONFIG = {
     token: "",
@@ -75,6 +58,7 @@ const NOTION_CONFIG = {
 };
 
 const initGitHubConfig = () => {
+    console.log("Initializing GitHub config...");
     chrome.storage.sync.get(
         [
             "github_token",
@@ -113,17 +97,24 @@ const initGitHubConfig = () => {
 };
 
 const createOrUpdateFile = async (filePath, content, commitMessage) => {
+    console.log("Creating/updating file:", filePath);
     try {
-        console.log("Creating/updating file...");
-        const response = await fetch(
-            `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filePath}`,
-            {
-                headers: {
-                    Authorization: `token ${GITHUB_CONFIG.token}`,
-                    Accept: "application/vnd.github.v3+json",
-                },
+        if (!chrome.runtime || chrome.runtime.id === undefined) {
+            console.log("Extension context invalidated, skipping GitHub push");
+            return false;
+        }
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filePath}`;
+        console.log("GitHub contents URL:", url);
+        console.log("GitHub branch:", GITHUB_CONFIG.branch);
+
+        console.log("Checking if file exists...");
+        const response = await fetch(`${url}?ref=${GITHUB_CONFIG.branch}`, {
+            headers: {
+                Authorization: `Bearer ${GITHUB_CONFIG.token}`,
+                Accept: "application/vnd.github.v3+json",
+                "X-GitHub-Api-Version": "2022-11-28",
             },
-        );
+        });
 
         const payload = {
             message: commitMessage,
@@ -132,47 +123,119 @@ const createOrUpdateFile = async (filePath, content, commitMessage) => {
         };
 
         if (response.ok) {
-            const data = await response.json();
-            payload.sha = data.sha;
+            try {
+                const data = await response.json();
+                if (data && data.sha) {
+                    payload.sha = data.sha;
+                    console.log("File exists, updating with SHA:", data.sha);
+                } else {
+                    console.log("File exists but no SHA in response, will attempt to create/update anyway");
+                }
+            } catch (jsonError) {
+                console.error("Failed to parse file existence response:", jsonError);
+                console.log("Response status:", response.status, "Response text:", await response.text());
+                // If we can't parse the response but the request was ok, something is wrong
+                // Let's try to proceed without SHA and see what happens
+            }
+        } else if (response.status === 404) {
+            console.log("File does not exist on this branch, creating new file");
+        } else {
+            const bodyText = await response.text().catch(() => "");
+            console.log("GET file check failed:", {
+                status: response.status,
+                statusText: response.statusText,
+                body: bodyText,
+            });
+            console.log("File may exist but check failed, attempting to create/update anyway");
+            // If the GET failed for some reason, we might still need to provide SHA
+            // But we don't have it, so this might fail. Let's try anyway.
         }
 
-        const updateResponse = await fetch(
-            `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filePath}`,
-            {
-                method: "PUT",
-                headers: {
-                    Authorization: `token ${GITHUB_CONFIG.token}`,
-                    Accept: "application/vnd.github.v3+json",
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
+        console.log("Creating/updating via PUT with payload:", {
+            hasSha: !!payload.sha,
+            branch: payload.branch,
+            messagePreview: (payload.message || "").slice(0, 80),
+            contentLength: (payload.content || "").length,
+        });
+
+        const updateResponse = await fetch(url, {
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${GITHUB_CONFIG.token}`,
+                Accept: "application/vnd.github.v3+json",
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Content-Type": "application/json",
             },
-        );
+            body: JSON.stringify(payload),
+        });
 
         if (!updateResponse.ok) {
-            throw new Error(
-                `GitHub API responded with ${updateResponse.status}`,
-            );
+            const errorText = await updateResponse.text().catch(() => "");
+            console.error("GitHub PUT failed:", {
+                status: updateResponse.status,
+                statusText: updateResponse.statusText,
+                body: errorText,
+            });
+            throw new Error(`GitHub API responded with ${updateResponse.status}: ${errorText}`);
         }
         console.log("File successfully created/updated!");
         return true;
     } catch (error) {
-        console.error("Error creating/updating file:", error);
+        if (error.message && error.message.includes("Extension context invalidated")) {
+            console.log("Extension context was invalidated during GitHub push, this is expected if extension was reloaded.");
+        } else {
+            console.error("Error creating/updating file:", error);
+        }
         return false;
     }
 };
 
 const handleSubmissionPush = async (Sdata) => {
+    console.log("Handling submission push with data:", Sdata);
     try {
         console.log("Handling submission push...");
-        if (!Sdata.success) return false;
+        if (!Sdata.success) {
+            console.log("Submission not successful, skipping push.");
+            return false;
+        }
 
         // Re-fetch latest question details and code before pushing
         fetchQuestionDetails();
-        fetchLatestCodeData();
+        
+        // If code data is empty, try to retrieve from storage (in case of context reload)
+        if (!PUBLIC_CODE || !SELECTED_LANGUAGE || !PROBLEM_SLUG) {
+            console.log("Code data is empty, attempting to retrieve from storage...");
+            const storedData = await new Promise((resolve) => {
+                chrome.storage.local.get(['tuf_code_data'], (result) => {
+                    resolve(result.tuf_code_data);
+                });
+            });
+            
+            if (storedData && storedData.timestamp && (Date.now() - storedData.timestamp) < 60000) { // Within 60 seconds
+                SELECTED_LANGUAGE = storedData.SELECTED_LANGUAGE || SELECTED_LANGUAGE;
+                PUBLIC_CODE = storedData.PUBLIC_CODE || PUBLIC_CODE;
+                PROBLEM_SLUG = storedData.PROBLEM_SLUG || PROBLEM_SLUG;
+                console.log("Retrieved code data from storage (age:", Math.round((Date.now() - storedData.timestamp)/1000), "seconds)");
+            } else {
+                console.log("No valid stored code data found or data too old");
+            }
+        }
+        
+        console.log("Current code data:", { SELECTED_LANGUAGE, PUBLIC_CODE: PUBLIC_CODE.substring(0, 100) + "...", PROBLEM_SLUG });
+
+        // Check if we have the required code data
+        if (!PUBLIC_CODE || !SELECTED_LANGUAGE || !PROBLEM_SLUG) {
+            console.error("Missing required code data for GitHub push:", {
+                hasCode: !!PUBLIC_CODE,
+                hasLanguage: !!SELECTED_LANGUAGE,
+                hasProblemSlug: !!PROBLEM_SLUG
+            });
+            return false;
+        }
 
         // Initialize GitHub and Notion config
         await new Promise((resolve) => {
+            console.log("Refreshing config for submission...");
             chrome.storage.sync.get(
                 [
                     "github_token",
@@ -216,6 +279,13 @@ const handleSubmissionPush = async (Sdata) => {
             return false;
         }
 
+        console.log("Using GitHub config:", {
+            owner: GITHUB_CONFIG.owner,
+            repo: GITHUB_CONFIG.repo,
+            branch: GITHUB_CONFIG.branch,
+            token: GITHUB_CONFIG.token,
+        });
+
         const commitMessage =
             `Solved: ${QUES}\n\n` +
             `Problem Link: ${window.location.href}\n\n` +
@@ -227,12 +297,34 @@ const handleSubmissionPush = async (Sdata) => {
             `- Memory: ${Sdata.averageMemory}`;
 
         // Get the appropriate language identifier for markdown code blocks
-        const languageId = 
-            SELECTED_LANGUAGE === "cpp" ? "cpp" :
-            SELECTED_LANGUAGE === "python" ? "python" :
-            SELECTED_LANGUAGE === "javascript" ? "javascript" :
-            SELECTED_LANGUAGE === "java" ? "java" :
-            "text";
+        // Map TakeUForward language codes to markdown language identifiers
+        const languageMap = {
+            "cpp": "cpp",
+            "c++": "cpp",
+            "python": "python",
+            "python3": "python",
+            "py": "python",
+            "javascript": "javascript",
+            "js": "javascript",
+            "java": "java",
+            "c": "c",
+            "csharp": "csharp",
+            "c#": "csharp",
+            "go": "go",
+            "golang": "go",
+            "rust": "rust",
+            "kotlin": "kotlin",
+            "swift": "swift",
+            "typescript": "typescript",
+            "ts": "typescript",
+            "ruby": "ruby",
+            "php": "php",
+            "scala": "scala",
+            "dart": "dart"
+        };
+        
+        const languageId = languageMap[SELECTED_LANGUAGE?.toLowerCase()] || SELECTED_LANGUAGE || "text";
+        console.log("Using language ID:", languageId, "from SELECTED_LANGUAGE:", SELECTED_LANGUAGE);
 
         const fileContent = `# ${QUES}
 
@@ -254,6 +346,7 @@ ${window.location.href}
 - Time: ${Sdata.averageTime}
 - Memory: ${Sdata.averageMemory}
 `;
+        console.log("Generated file content, code length in content:", PUBLIC_CODE.length);
 
         const urlPath = window.location.pathname
             .replace("/plus/", "") // Remove 'plus'
@@ -267,9 +360,11 @@ ${window.location.href}
 
         // Create directory path from URL parts
         const dirPath = urlPath.join("/");
+        console.log("Directory path:", dirPath);
 
         // Always use .md extension for all solutions to ensure consistency
         const filePath = `${dirPath}/solution.md`;
+        console.log("File path:", filePath);
         const success = await createOrUpdateFile(
             filePath,
             fileContent,
@@ -278,6 +373,9 @@ ${window.location.href}
 
         if (success) {
             console.log("Successfully pushed to GitHub!");
+            
+            // Clear stored code data after successful push
+            chrome.storage.local.remove(['tuf_code_data']);
 
             // Debug Notion config
             console.log("Notion config:", NOTION_CONFIG);
@@ -291,10 +389,16 @@ ${window.location.href}
             }
         } else {
             console.error("Failed to push to GitHub");
+            // Clear stored code data on failure too
+            chrome.storage.local.remove(['tuf_code_data']);
         }
         return success;
     } catch (error) {
-        console.error("Error in GitHub push:", error);
+        if (error.message && error.message.includes("Extension context invalidated")) {
+            console.log("Extension context was invalidated during submission push, this is expected if extension was reloaded.");
+        } else {
+            console.error("Error in GitHub push:", error);
+        }
         return false;
     }
 };
@@ -307,8 +411,27 @@ const injectInterceptor = () => {
 };
 
 window.addEventListener("message", async (event) => {
-    console.log("Received submission response");
-    if (event.data.type === "SUBMISSION_RESPONSE") {
+    console.log("Received message:", event.data.type, "from origin:", event.origin);
+    if (event.data.type === "CODE_SUBMIT") {
+        console.log("Code submit payload:", event.data.payload);
+        // Always extract code data when submit request is intercepted
+        SELECTED_LANGUAGE = event.data.payload.language;
+        PUBLIC_CODE = event.data.payload.usercode;
+        PROBLEM_SLUG = event.data.payload.problem_id;
+        waitingForCode = false; // Reset the flag
+        console.log("Code extracted for language:", SELECTED_LANGUAGE, "Code length:", PUBLIC_CODE.length);
+        
+        // Store in chrome storage to persist across potential context reloads
+        chrome.storage.local.set({
+            'tuf_code_data': {
+                SELECTED_LANGUAGE,
+                PUBLIC_CODE,
+                PROBLEM_SLUG,
+                timestamp: Date.now()
+            }
+        });
+    } else if (event.data.type === "SUBMISSION_RESPONSE") {
+        console.log("Received submission response");
         const submissionData = event.data.payload;
         console.log("Submission success status:", submissionData.success);
         if (submissionData.success === true) {
@@ -322,18 +445,23 @@ window.addEventListener("message", async (event) => {
 });
 
 function initSubmitButtonMonitor() {
+    console.log("Initializing submit button monitor...");
     document.addEventListener("DOMContentLoaded", () => {
-        const submitBtn = document.querySelector(
-            'button[data-tooltip-id="Submit"]',
-        );
+        const submitBtn = document.querySelector('button[data-slot="tooltip-trigger"] svg path[fill="#119933"]')
+            ?.closest('button');
+        console.log("Submit button found:", !!submitBtn);
         if (submitBtn) {
             submitBtn.addEventListener("click", () => {
                 console.log("Submit button clicked");
+                waitingForCode = true;
             });
+        } else {
+            console.log("Submit button not found.");
         }
     });
 }
 const pushToNotion = async () => {
+    console.log("Pushing to Notion...");
     if (
         !NOTION_CONFIG.enabled ||
         !NOTION_CONFIG.token ||
@@ -374,6 +502,7 @@ const pushToNotion = async () => {
             '[class*="difficulty"], [class*="Difficulty"]',
         );
         const difficulty = difficultyElement?.textContent?.trim() || "Medium";
+        console.log("Extracted difficulty:", difficulty);
 
         console.log("Extracted data:", {
             topic,
@@ -388,6 +517,7 @@ const pushToNotion = async () => {
             difficulty: difficulty,
             topic: topic,
         };
+        console.log("Problem data for Notion:", problemData);
 
         // Use background script to make Notion API call
         const response = await new Promise((resolve) => {
@@ -415,6 +545,7 @@ const pushToNotion = async () => {
 };
 
 // Call initialization methods immediately
+console.log("Initializing extension...");
 initGitHubConfig();
 injectInterceptor();
 initSubmitButtonMonitor();
