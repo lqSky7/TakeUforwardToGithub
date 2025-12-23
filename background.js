@@ -44,6 +44,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
+  
+  if (request.action === 'scheduleRevision') {
+    console.log("Scheduling revision for:", request.problemName, request.difficulty, request.tries);
+    scheduleRevision(request.problemName, request.difficulty, request.tries)
+      .then(() => sendResponse({ success: true }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
 });
 
 async function handleNotionAPICall(data) {
@@ -275,4 +283,80 @@ function getTopicsFromText(topic) {
   
   const topics = topic.split(/[,;]/).map(t => t.trim()).filter(t => t);
   return topics.map(name => ({ name })).slice(0, 5);
+}
+
+async function scheduleRevision(problemName, difficulty, tries) {
+  // Get Craft config
+  const data = await chrome.storage.sync.get(['craft_enabled', 'craft_url']);
+  if (!data.craft_enabled || !data.craft_url) {
+    console.log('Craft integration not enabled or URL not set');
+    return;
+  }
+  const apiUrl = data.craft_url;
+
+  // Simplified spaced repetition based on SM2 principles
+  // Assign quality based on tries and difficulty
+  let quality = 5; // max
+  if (tries > 1) quality -= 1;
+  if (tries > 3) quality -= 1;
+  if (difficulty.toLowerCase() === 'hard') quality -= 1;
+  if (difficulty.toLowerCase() === 'easy') quality += 1;
+  quality = Math.max(0, Math.min(5, quality));
+
+  // SM2 intervals
+  let intervals = [];
+  let ease = 2.5;
+  let interval = 1; // first review in 1 day
+
+  intervals.push(interval);
+
+  // Second review
+  interval = 6;
+  intervals.push(interval);
+
+  // Subsequent reviews
+  for (let i = 2; i < 5; i++) { // up to 5 reviews
+    ease = ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    ease = Math.max(1.3, ease);
+    interval = Math.round(interval * ease);
+    intervals.push(interval);
+  }
+
+  const today = new Date();
+  const dates = intervals.map(days => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+  });
+
+  // Add tasks
+  for (const date of dates) {
+    const payload = {
+      tasks: [
+        {
+          markdown: `Revise: ${problemName}`,
+          location: {
+            type: "dailyNote",
+            date: date
+          }
+        }
+      ]
+    };
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        console.error('Failed to add task for date', date, response.status);
+      } else {
+        console.log('Added revision task for', date);
+      }
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
+  }
 }

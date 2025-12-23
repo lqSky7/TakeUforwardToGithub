@@ -532,6 +532,10 @@ body {
   display: none;
 }
 
+.hidden {
+  display: none;
+}
+
 .info-label {
   font-family: 'Adobe Garamond Pro', serif;
   font-size: 12px;

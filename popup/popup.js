@@ -4,6 +4,7 @@ class PopupController {
     this.isConnected = false;
     this.config = {};
     this.notionConfig = {};
+    this.craftConfig = {};
     this.debugMode = false;
     this.validators = {};
     this.debounceTimers = {};
@@ -60,6 +61,10 @@ class PopupController {
       this.toggleNotionConfig(e.target.checked);
     });
 
+    document.getElementById("craft-enabled").addEventListener("change", (e) => {
+      this.toggleCraftConfig(e.target.checked);
+    });
+
     // Debug toggle
     document.getElementById("debug-enabled").addEventListener("change", (e) => {
       this.debugMode = e.target.checked;
@@ -73,7 +78,7 @@ class PopupController {
     });
 
     // Real-time validation
-    ["github-token", "github-owner", "github-repo", "notion-token", "notion-page"].forEach((fieldId) => {
+    ["github-token", "github-owner", "github-repo", "notion-token", "notion-page", "craft-url"].forEach((fieldId) => {
       const field = document.getElementById(fieldId);
       if (field) {
         field.addEventListener("input", () => {
@@ -114,6 +119,11 @@ class PopupController {
         pattern: /^.{1,}$/,
         message: "Page name cannot be empty",
       },
+      "craft-url": {
+        required: false,
+        pattern: /^https:\/\/connect\.craft\.do\/links\/[^\/]+\/api\/v1$/,
+        message: "Invalid Craft API URL format. Should be https://connect.craft.do/links/.../api/v1",
+      },
     };
   }
 
@@ -128,6 +138,8 @@ class PopupController {
         "notion_token",
         "notion_page",
         "notion_database_id",
+        "craft_enabled",
+        "craft_url",
         "last_sync",
         "repo_info",
         "commit_count",
@@ -150,6 +162,11 @@ class PopupController {
         databaseId: data.notion_database_id || "",
       };
 
+      this.craftConfig = {
+        enabled: data.craft_enabled || false,
+        url: data.craft_url || "",
+      };
+
       this.statusData = data;
 
       this.populateFormFields();
@@ -169,8 +186,11 @@ class PopupController {
     document.getElementById("notion-enabled").checked = this.notionConfig.enabled;
     document.getElementById("notion-token").value = this.notionConfig.token;
     document.getElementById("notion-page").value = this.notionConfig.page;
+    document.getElementById("craft-enabled").checked = this.craftConfig.enabled;
+    document.getElementById("craft-url").value = this.craftConfig.url;
     document.getElementById("debug-enabled").checked = this.debugMode;
     this.toggleNotionConfig(this.notionConfig.enabled);
+    this.toggleCraftConfig(this.craftConfig.enabled);
   }
 
   initializeUI() {
@@ -252,6 +272,8 @@ class PopupController {
         notion_enabled: formData.notionEnabled,
         notion_token: formData.notionToken,
         notion_page: formData.notionPage,
+        craft_enabled: formData.craftEnabled,
+        craft_url: formData.craftUrl,
       };
 
       await chrome.storage.sync.set(saveData);
@@ -262,6 +284,10 @@ class PopupController {
         token: formData.notionToken,
         page: formData.notionPage,
         databaseId: this.notionConfig.databaseId,
+      };
+      this.craftConfig = {
+        enabled: formData.craftEnabled,
+        url: formData.craftUrl,
       };
 
       this.updateConnectionStatus();
@@ -283,6 +309,8 @@ class PopupController {
       notionEnabled: document.getElementById("notion-enabled").checked,
       notionToken: document.getElementById("notion-token").value.trim(),
       notionPage: document.getElementById("notion-page").value.trim(),
+      craftEnabled: document.getElementById("craft-enabled").checked,
+      craftUrl: document.getElementById("craft-url").value.trim(),
     };
   }
 
@@ -297,9 +325,32 @@ class PopupController {
         fieldValue = data.notionToken;
       } else if (fieldId === "notion-page") {
         fieldValue = data.notionPage;
+      } else if (fieldId === "craft-url") {
+        fieldValue = data.craftUrl;
       }
 
       if ((fieldId === "notion-token" || fieldId === "notion-page") && !data.notionEnabled) {
+        return;
+      }
+
+      if (fieldId === "craft-url" && !data.craftEnabled) {
+        return;
+      }
+
+      // Check required when enabled
+      if (fieldId === "notion-token" && data.notionEnabled && !fieldValue) {
+        this.showFieldError(fieldId, "Notion token is required when enabled");
+        isValid = false;
+        return;
+      }
+      if (fieldId === "notion-page" && data.notionEnabled && !fieldValue) {
+        this.showFieldError(fieldId, "Notion page name is required when enabled");
+        isValid = false;
+        return;
+      }
+      if (fieldId === "craft-url" && data.craftEnabled && !fieldValue) {
+        this.showFieldError(fieldId, "Craft API URL is required when enabled");
+        isValid = false;
         return;
       }
 
@@ -502,6 +553,15 @@ class PopupController {
     } else {
       notionConfig.classList.add("hidden");
       notionRow.classList.add("hidden");
+    }
+  }
+
+  toggleCraftConfig(enabled) {
+    const craftConfig = document.getElementById("craft-config");
+    if (enabled) {
+      craftConfig.classList.remove("hidden");
+    } else {
+      craftConfig.classList.add("hidden");
     }
   }
 

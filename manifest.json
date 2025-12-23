@@ -21,7 +21,8 @@
     "https://takeuforward.org/*",
     "https://api.github.com/*",
     "*://*.takeuforward.org/*",
-    "https://api.notion.com/*"
+    "https://api.notion.com/*",
+    "https://connect.craft.do/*"
   ],
   "background": {
     "service_worker": "background.js"

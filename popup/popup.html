@@ -99,6 +99,25 @@
                             </label>
                         </div>
 
+                        <div class="field">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="craft-enabled" />
+                                <span class="checkbox-custom"></span>
+                                Enable Craft.do Tasks Integration
+                            </label>
+                        </div>
+
+                        <div id="craft-config" class="craft-config hidden">
+                            <div class="field">
+                                <label for="craft-url">Craft API URL</label>
+                                <input
+                                    type="text"
+                                    id="craft-url"
+                                    placeholder="https://connect.craft.do/links/.../api/v1"
+                                />
+                            </div>
+                        </div>
+
                         <div id="notion-config" class="notion-config hidden">
                             <div class="field">
                                 <label for="notion-token">Notion Token</label>

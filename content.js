@@ -5,6 +5,8 @@ let PROBLEM_SLUG = "";
 let SELECTED_LANGUAGE = "";
 let PUBLIC_CODE = "";
 let waitingForCode = false;
+let DIFFICULTY = "";
+let TRIES = 0;
 
 const fetchQuestionDetails = () => {
     console.log("Fetching question details...");
@@ -20,11 +22,16 @@ const fetchQuestionDetails = () => {
     } else {
         console.log("Question elements not found:", { headingElem, paragraphElem });
     }
+
+    const difficultyElement = document.querySelector('[class*="difficulty"], [class*="Difficulty"]');
+    DIFFICULTY = difficultyElement?.textContent?.trim() || "Medium";
+    console.log("Extracted difficulty:", DIFFICULTY);
 };
 
 const urlChangeDetector = setInterval(() => {
     if (currentPathname !== window.location.pathname) {
         currentPathname = window.location.pathname;
+        TRIES = 0; // reset tries on problem change
 
         setTimeout(() => {
             fetchQuestionDetails();
@@ -387,6 +394,14 @@ ${window.location.href}
             } else {
                 console.log("Notion is disabled or not configured");
             }
+
+            // Schedule revisions
+            chrome.runtime.sendMessage({
+                action: "scheduleRevision",
+                problemName: QUES,
+                difficulty: DIFFICULTY,
+                tries: TRIES
+            });
         } else {
             console.error("Failed to push to GitHub");
             // Clear stored code data on failure too
@@ -430,6 +445,10 @@ window.addEventListener("message", async (event) => {
                 timestamp: Date.now()
             }
         });
+    } else if (event.data.type === "CODE_RUN") {
+        console.log("Code run attempted");
+        TRIES++;
+        console.log("Tries now:", TRIES);
     } else if (event.data.type === "SUBMISSION_RESPONSE") {
         console.log("Received submission response");
         const submissionData = event.data.payload;

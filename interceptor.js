@@ -34,6 +34,25 @@
       } catch (error) {
         console.error("Error parsing submit payload:", error);
       }
+    } else if (
+      this.url.includes("backend-go.takeuforward.org/api/v1/plus/judge/run") &&
+      this.method.toLowerCase() === "post"
+    ) {
+      console.log("Intercepting run request...");
+      try {
+        const payload = JSON.parse(body);
+        window.postMessage(
+          {
+            type: "CODE_RUN",
+            payload: {
+              problem_id: payload.problem_id,
+            },
+          },
+          "*",
+        );
+      } catch (error) {
+        console.error("Error parsing run payload:", error);
+      }
     }
     this.addEventListener("load", function () {
       console.log("XHR load for URL:", this.url);
