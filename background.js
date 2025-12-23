@@ -1,10 +1,13 @@
+console.log('[craft] Background script loaded');
+
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("Extension installed.");
+  console.log("[craft] Extension installed.");
 });
 
 // Handle messages from content script and popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log("Background received message:", request.action);
+  console.log('[DEBUG] Message received in background:', request.action, request);
+  
   if (request.action === 'notionAPI') {
     console.log("Handling notionAPI call...");
     handleNotionAPICall(request.data)
@@ -46,13 +49,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   
   if (request.action === 'scheduleRevision') {
-    console.log("Scheduling revision for:", request.problemName, request.difficulty, request.tries);
+    console.log('[craft] Received scheduleRevision message:', request);
     scheduleRevision(request.problemName, request.difficulty, request.tries)
       .then(() => sendResponse({ success: true }))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
   if (request.action === 'getCraftTasks') {
+    console.log('[craft] Getting craft tasks');
     getCraftTasks()
       .then(tasks => sendResponse({ success: true, tasks }))
       .catch(error => sendResponse({ success: false, error: error.message }));
@@ -60,11 +64,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'deleteCraftTasks') {
+    console.log('[craft] Deleting tasks for:', request.problemName);
     deleteCraftTasks(request.problemName)
       .then(success => sendResponse({ success }))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
-  }});
+  }
+});
 
 async function handleNotionAPICall(data) {
   const { url, method, headers, body } = data;
@@ -297,6 +303,7 @@ function getTopicsFromText(topic) {
   return topics.map(name => ({ name })).slice(0, 5);
 }
 
+// Craft integration functions
 async function getProblemState(problemName) {
   const data = await chrome.storage.local.get('problem_states');
   return data.problem_states?.[problemName] || null;
@@ -328,8 +335,11 @@ async function deleteCraftTasks(problemName) {
     // Call delete API
     const config = await chrome.storage.sync.get(['craft_url']);
     if (config.craft_url && taskIds.length > 0) {
+      const deleteEndpoint = config.craft_url.endsWith('/') ? config.craft_url + 'tasks' : config.craft_url + '/tasks';
+      console.log('[craft] Deleting from endpoint:', deleteEndpoint, 'taskIds:', taskIds);
+      
       try {
-        const response = await fetch(config.craft_url, {
+        const response = await fetch(deleteEndpoint, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
@@ -337,15 +347,15 @@ async function deleteCraftTasks(problemName) {
           body: JSON.stringify({ idsToDelete: taskIds })
         });
         if (response.ok) {
-          console.log('Deleted tasks for', problemName);
+          console.log('[craft] Deleted tasks for', problemName);
           delete tasks[problemName];
           await chrome.storage.local.set({ craft_tasks: tasks });
           return true;
         } else {
-          console.error('Failed to delete tasks');
+          console.error('[craft] Failed to delete tasks');
         }
       } catch (error) {
-        console.error('Error deleting tasks:', error);
+        console.error('[craft] Error deleting tasks:', error);
       }
     }
   }
@@ -353,16 +363,24 @@ async function deleteCraftTasks(problemName) {
 }
 
 async function scheduleRevision(problemName, difficulty, tries, link) {
+  console.log('[craft] scheduleRevision STARTED for:', problemName);
+
   // Get Craft config
   const data = await chrome.storage.sync.get(['craft_enabled', 'craft_url']);
+  console.log('[craft] Craft config loaded:', data);
+
   if (!data.craft_enabled || !data.craft_url) {
-    console.log('Craft integration not enabled or URL not set');
+    console.log('[craft] Craft integration not enabled or URL not set - EXITING');
     return;
   }
   const apiUrl = data.craft_url;
+  const tasksEndpoint = apiUrl.endsWith('/') ? apiUrl + 'tasks' : apiUrl + '/tasks';
+  console.log('[craft] Using API URL:', apiUrl, 'tasks endpoint:', tasksEndpoint);
 
   // Get or initialize problem state
-  const state = await getProblemState(problemName);
+  let state = await getProblemState(problemName);
+  console.log('[craft] Problem state:', state);
+
   if (!state) {
     state = { ease: 2.5, interval: 1, lastReview: null };
   }
@@ -374,6 +392,7 @@ async function scheduleRevision(problemName, difficulty, tries, link) {
   if (difficulty.toLowerCase() === 'hard') quality -= 1;
   if (difficulty.toLowerCase() === 'easy') quality += 1;
   quality = Math.max(0, Math.min(5, quality));
+  console.log('[craft] Calculated quality:', quality);
 
   // Update state using SM2 algorithm
   if (quality >= 3) {
@@ -384,6 +403,7 @@ async function scheduleRevision(problemName, difficulty, tries, link) {
   state.ease = state.ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
   state.ease = Math.max(1.3, state.ease);
   state.lastReview = new Date().toISOString().split('T')[0];
+  console.log('[craft] Updated state:', state);
 
   // Save updated state
   await setProblemState(problemName, state);
@@ -395,6 +415,7 @@ async function scheduleRevision(problemName, difficulty, tries, link) {
     intervals.push(currentInterval);
     currentInterval = Math.round(currentInterval * state.ease);
   }
+  console.log('[craft] Intervals:', intervals);
 
   const today = new Date();
   const dates = intervals.map(days => {
@@ -402,6 +423,7 @@ async function scheduleRevision(problemName, difficulty, tries, link) {
     d.setDate(d.getDate() + days);
     return d.toISOString().split('T')[0];
   });
+  console.log('[craft] Scheduled dates:', dates);
 
   // Add tasks
   const taskIds = [];
@@ -417,30 +439,43 @@ async function scheduleRevision(problemName, difficulty, tries, link) {
         }
       ]
     };
+    console.log('[craft] Making API call to:', tasksEndpoint, 'with payload:', payload);
+    
     try {
-      const response = await fetch(apiUrl, {
+      const response = await fetch(tasksEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
       });
+      console.log('[craft] API response status:', response.status, 'headers:', [...response.headers.entries()]);
+
       if (!response.ok) {
-        console.error('Failed to add task for date', date, response.status);
+        const errorText = await response.text();
+        console.error('[craft] API error response:', errorText);
+        console.error('[craft] Failed to add task for date', date, response.status, errorText);
       } else {
         const result = await response.json();
+        console.log('[craft] Task added successfully, result:', result);
+
         if (result.items && result.items[0]) {
           taskIds.push(result.items[0].id);
         }
-        console.log('Added revision task for', date);
       }
     } catch (error) {
-      console.error('Error adding task:', error);
+      console.error('[craft] Network error making API call:', error);
+      console.error('[craft] Error adding task:', error);
     }
   }
+
+  console.log('[craft] Collected taskIds:', taskIds);
 
   // Store the task IDs for this problem
   if (taskIds.length > 0) {
     await setCraftTasks(problemName, link, taskIds);
+    console.log('[craft] Stored craft tasks');
+  } else {
+    console.log('[craft] No tasks added, not storing');
   }
 }

@@ -8,6 +8,13 @@ let waitingForCode = false;
 let DIFFICULTY = "";
 let TRIES = 0;
 
+// UTF-8 safe base64 encoding for GitHub API
+function utf8ToBase64(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode(parseInt(p1, 16));
+    }));
+}
+
 const fetchQuestionDetails = () => {
     console.log("Fetching question details...");
     const headingElem = document.querySelector('h1.text-xl.font-bold');
@@ -125,7 +132,7 @@ const createOrUpdateFile = async (filePath, content, commitMessage) => {
 
         const payload = {
             message: commitMessage,
-            content: btoa(content),
+            content: utf8ToBase64(content),
             branch: GITHUB_CONFIG.branch,
         };
 
@@ -394,20 +401,30 @@ ${window.location.href}
             } else {
                 console.log("Notion is disabled or not configured");
             }
-
-            // Schedule revisions
-            chrome.runtime.sendMessage({
-                action: "scheduleRevision",
-                problemName: QUES,
-                difficulty: DIFFICULTY,
-                tries: TRIES,
-                link: window.location.href
-            });
         } else {
             console.error("Failed to push to GitHub");
             // Clear stored code data on failure too
             chrome.storage.local.remove(['tuf_code_data']);
         }
+
+        // Schedule revisions (independent of Git success)
+        console.log('[craft] Sending scheduleRevision message:', {
+            action: "scheduleRevision",
+            problemName: QUES,
+            difficulty: DIFFICULTY,
+            tries: TRIES,
+            link: window.location.href
+        });
+        chrome.runtime.sendMessage({
+            action: "scheduleRevision",
+            problemName: QUES,
+            difficulty: DIFFICULTY,
+            tries: TRIES,
+            link: window.location.href
+        }, (response) => {
+            console.log('[craft] Response from background:', response);
+        });
+
         return success;
     } catch (error) {
         if (error.message && error.message.includes("Extension context invalidated")) {
