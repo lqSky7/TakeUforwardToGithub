@@ -52,7 +52,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
   }
-});
+  if (request.action === 'getCraftTasks') {
+    getCraftTasks()
+      .then(tasks => sendResponse({ success: true, tasks }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }
+
+  if (request.action === 'deleteCraftTasks') {
+    deleteCraftTasks(request.problemName)
+      .then(success => sendResponse({ success }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true;
+  }});
 
 async function handleNotionAPICall(data) {
   const { url, method, headers, body } = data;
@@ -297,7 +309,50 @@ async function setProblemState(problemName, state) {
   await chrome.storage.local.set({ problem_states: states });
 }
 
-async function scheduleRevision(problemName, difficulty, tries) {
+async function setCraftTasks(problemName, link, taskIds) {
+  const data = await chrome.storage.local.get('craft_tasks');
+  const tasks = data.craft_tasks || {};
+  tasks[problemName] = { link, taskIds };
+  await chrome.storage.local.set({ craft_tasks: tasks });
+}
+
+async function getCraftTasks() {
+  const data = await chrome.storage.local.get('craft_tasks');
+  return data.craft_tasks || {};
+}
+
+async function deleteCraftTasks(problemName) {
+  const tasks = await getCraftTasks();
+  if (tasks[problemName]) {
+    const taskIds = tasks[problemName].taskIds;
+    // Call delete API
+    const config = await chrome.storage.sync.get(['craft_url']);
+    if (config.craft_url && taskIds.length > 0) {
+      try {
+        const response = await fetch(config.craft_url, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ idsToDelete: taskIds })
+        });
+        if (response.ok) {
+          console.log('Deleted tasks for', problemName);
+          delete tasks[problemName];
+          await chrome.storage.local.set({ craft_tasks: tasks });
+          return true;
+        } else {
+          console.error('Failed to delete tasks');
+        }
+      } catch (error) {
+        console.error('Error deleting tasks:', error);
+      }
+    }
+  }
+  return false;
+}
+
+async function scheduleRevision(problemName, difficulty, tries, link) {
   // Get Craft config
   const data = await chrome.storage.sync.get(['craft_enabled', 'craft_url']);
   if (!data.craft_enabled || !data.craft_url) {
@@ -349,11 +404,12 @@ async function scheduleRevision(problemName, difficulty, tries) {
   });
 
   // Add tasks
+  const taskIds = [];
   for (const date of dates) {
     const payload = {
       tasks: [
         {
-          markdown: `Revise: ${problemName}`,
+          markdown: `Revise: [${problemName}](${link})`,
           location: {
             type: "dailyNote",
             date: date
@@ -372,10 +428,19 @@ async function scheduleRevision(problemName, difficulty, tries) {
       if (!response.ok) {
         console.error('Failed to add task for date', date, response.status);
       } else {
+        const result = await response.json();
+        if (result.items && result.items[0]) {
+          taskIds.push(result.items[0].id);
+        }
         console.log('Added revision task for', date);
       }
     } catch (error) {
       console.error('Error adding task:', error);
     }
+  }
+
+  // Store the task IDs for this problem
+  if (taskIds.length > 0) {
+    await setCraftTasks(problemName, link, taskIds);
   }
 }

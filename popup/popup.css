@@ -81,6 +81,8 @@
   --error-dim: rgba(239, 68, 68, 0.15);
   --warning: #f59e0b;
   --warning-dim: rgba(245, 158, 11, 0.15);
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
   --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
   --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.15);
   --card-radius: 16px;
@@ -230,7 +232,6 @@ body {
 .tab-panel {
   display: none;
   padding: 8px 0;
-  height: 100%;
 }
 
 /* Footer */
@@ -2020,6 +2021,60 @@ body {
 /* Config tab padding fix */
 #config {
   padding: 8px 4px;
+}
+
+/* Tasks tab */
+.tasks-list {
+  padding: 16px;
+}
+
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: var(--bg-secondary);
+}
+
+.task-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.task-info a {
+  display: block;
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  margin-bottom: 4px;
+}
+
+.task-info a:hover {
+  text-decoration: underline;
+}
+
+.task-info span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.delete-task {
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.delete-task:hover {
+  background: var(--danger-hover);
 }
 
 /* Prediction tab padding */

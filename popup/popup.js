@@ -197,6 +197,7 @@ class PopupController {
     if (this.config.token && this.config.owner && this.config.repo) {
       this.quickConnectionCheck();
     }
+    this.loadCraftTasks();
   }
 
   switchTab(tabName) {
@@ -360,6 +361,74 @@ class PopupController {
     });
 
     return isValid;
+  }
+
+  async loadCraftTasks() {
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'getCraftTasks' });
+      if (response.success) {
+        this.populateTasksList(response.tasks);
+      } else {
+        this.showTasksError('Failed to load tasks');
+      }
+    } catch (error) {
+      this.logError('Error loading tasks:', error);
+      this.showTasksError('Error loading tasks');
+    }
+  }
+
+  populateTasksList(tasks) {
+    const list = document.getElementById('tasks-list');
+    list.innerHTML = '';
+
+    if (Object.keys(tasks).length === 0) {
+      list.innerHTML = '<p>No scheduled tasks.</p>';
+      return;
+    }
+
+    for (const [problemName, data] of Object.entries(tasks)) {
+      const taskItem = document.createElement('div');
+      taskItem.className = 'task-item';
+      taskItem.innerHTML = `
+        <div class="task-info">
+          <h4>${problemName}</h4>
+          <a href="${data.link}" target="_blank">${data.link}</a>
+          <span>${data.taskIds.length} scheduled revisions</span>
+        </div>
+        <button class="btn btn-danger delete-task" data-problem="${problemName}">Delete All</button>
+      `;
+      list.appendChild(taskItem);
+    }
+
+    // Add event listeners for delete buttons
+    document.querySelectorAll('.delete-task').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const problemName = e.target.dataset.problem;
+        this.deleteCraftTasks(problemName);
+      });
+    });
+  }
+
+  async deleteCraftTasks(problemName) {
+    if (!confirm(`Delete all revision tasks for "${problemName}"?`)) return;
+
+    try {
+      const response = await chrome.runtime.sendMessage({ action: 'deleteCraftTasks', problemName });
+      if (response.success) {
+        this.showMessage('Tasks deleted successfully!', 'success');
+        this.loadCraftTasks(); // Reload list
+      } else {
+        this.showMessage('Failed to delete tasks', 'error');
+      }
+    } catch (error) {
+      this.logError('Error deleting tasks:', error);
+      this.showMessage('Error deleting tasks', 'error');
+    }
+  }
+
+  showTasksError(message) {
+    const list = document.getElementById('tasks-list');
+    list.innerHTML = `<p class="error">${message}</p>`;
   }
 
   async testConnection() {

@@ -400,7 +400,8 @@ ${window.location.href}
                 action: "scheduleRevision",
                 problemName: QUES,
                 difficulty: DIFFICULTY,
-                tries: TRIES
+                tries: TRIES,
+                link: window.location.href
             });
         } else {
             console.error("Failed to push to GitHub");
