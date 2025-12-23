@@ -285,6 +285,18 @@ function getTopicsFromText(topic) {
   return topics.map(name => ({ name })).slice(0, 5);
 }
 
+async function getProblemState(problemName) {
+  const data = await chrome.storage.local.get('problem_states');
+  return data.problem_states?.[problemName] || null;
+}
+
+async function setProblemState(problemName, state) {
+  const data = await chrome.storage.local.get('problem_states');
+  const states = data.problem_states || {};
+  states[problemName] = state;
+  await chrome.storage.local.set({ problem_states: states });
+}
+
 async function scheduleRevision(problemName, difficulty, tries) {
   // Get Craft config
   const data = await chrome.storage.sync.get(['craft_enabled', 'craft_url']);
@@ -294,32 +306,39 @@ async function scheduleRevision(problemName, difficulty, tries) {
   }
   const apiUrl = data.craft_url;
 
-  // Simplified spaced repetition based on SM2 principles
-  // Assign quality based on tries and difficulty
-  let quality = 5; // max
-  if (tries > 1) quality -= 1;
-  if (tries > 3) quality -= 1;
+  // Get or initialize problem state
+  const state = await getProblemState(problemName);
+  if (!state) {
+    state = { ease: 2.5, interval: 1, lastReview: null };
+  }
+
+  // Calculate quality based on tries and difficulty
+  let quality = 5;
+  if (tries >= 2) quality -= 1;
+  if (tries >= 4) quality -= 1;
   if (difficulty.toLowerCase() === 'hard') quality -= 1;
   if (difficulty.toLowerCase() === 'easy') quality += 1;
   quality = Math.max(0, Math.min(5, quality));
 
-  // SM2 intervals
-  let intervals = [];
-  let ease = 2.5;
-  let interval = 1; // first review in 1 day
+  // Update state using SM2 algorithm
+  if (quality >= 3) {
+    state.interval = Math.round(state.interval * state.ease);
+  } else {
+    state.interval = 1;
+  }
+  state.ease = state.ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  state.ease = Math.max(1.3, state.ease);
+  state.lastReview = new Date().toISOString().split('T')[0];
 
-  intervals.push(interval);
+  // Save updated state
+  await setProblemState(problemName, state);
 
-  // Second review
-  interval = 6;
-  intervals.push(interval);
-
-  // Subsequent reviews
-  for (let i = 2; i < 5; i++) { // up to 5 reviews
-    ease = ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-    ease = Math.max(1.3, ease);
-    interval = Math.round(interval * ease);
-    intervals.push(interval);
+  // Schedule next 5 reviews
+  const intervals = [];
+  let currentInterval = state.interval;
+  for (let i = 0; i < 5; i++) {
+    intervals.push(currentInterval);
+    currentInterval = Math.round(currentInterval * state.ease);
   }
 
   const today = new Date();
