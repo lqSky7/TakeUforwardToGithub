@@ -50,7 +50,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   if (request.action === 'scheduleRevision') {
     console.log('[craft] Received scheduleRevision message:', request);
-    scheduleRevision(request.problemName, request.difficulty, request.tries)
+    scheduleRevision(request.problemName, request.difficulty, request.tries, request.link)
       .then(() => sendResponse({ success: true }))
       .catch(error => sendResponse({ success: false, error: error.message }));
     return true;
@@ -304,18 +304,6 @@ function getTopicsFromText(topic) {
 }
 
 // Craft integration functions
-async function getProblemState(problemName) {
-  const data = await chrome.storage.local.get('problem_states');
-  return data.problem_states?.[problemName] || null;
-}
-
-async function setProblemState(problemName, state) {
-  const data = await chrome.storage.local.get('problem_states');
-  const states = data.problem_states || {};
-  states[problemName] = state;
-  await chrome.storage.local.set({ problem_states: states });
-}
-
 async function setCraftTasks(problemName, link, taskIds) {
   const data = await chrome.storage.local.get('craft_tasks');
   const tasks = data.craft_tasks || {};
@@ -363,7 +351,7 @@ async function deleteCraftTasks(problemName) {
 }
 
 async function scheduleRevision(problemName, difficulty, tries, link) {
-  console.log('[craft] scheduleRevision STARTED for:', problemName);
+  console.log('[craft] scheduleRevision STARTED for:', problemName, 'link:', link);
 
   // Get Craft config
   const data = await chrome.storage.sync.get(['craft_enabled', 'craft_url']);
@@ -377,45 +365,28 @@ async function scheduleRevision(problemName, difficulty, tries, link) {
   const tasksEndpoint = apiUrl.endsWith('/') ? apiUrl + 'tasks' : apiUrl + '/tasks';
   console.log('[craft] Using API URL:', apiUrl, 'tasks endpoint:', tasksEndpoint);
 
-  // Get or initialize problem state
-  let state = await getProblemState(problemName);
-  console.log('[craft] Problem state:', state);
-
-  if (!state) {
-    state = { ease: 2.5, interval: 1, lastReview: null };
+  // Determine revision schedule based on difficulty and tries
+  let baseIntervals = [2, 4, 7, 14]; // Base schedule
+  
+  // Adjust based on difficulty
+  if (difficulty.toLowerCase() === 'easy') {
+    baseIntervals = [7, 14]; // Fewer, later revisions for easy
+  } else if (difficulty.toLowerCase() === 'medium') {
+    baseIntervals = [2, 7, 14]; // Standard
+  } else if (difficulty.toLowerCase() === 'hard') {
+    baseIntervals = [1, 2, 4, 7, 14]; // More frequent for hard
   }
-
-  // Calculate quality based on tries and difficulty
-  let quality = 5;
-  if (tries >= 2) quality -= 1;
-  if (tries >= 4) quality -= 1;
-  if (difficulty.toLowerCase() === 'hard') quality -= 1;
-  if (difficulty.toLowerCase() === 'easy') quality += 1;
-  quality = Math.max(0, Math.min(5, quality));
-  console.log('[craft] Calculated quality:', quality);
-
-  // Update state using SM2 algorithm
-  if (quality >= 3) {
-    state.interval = Math.round(state.interval * state.ease);
-  } else {
-    state.interval = 1;
+  
+  // Add more revisions based on tries
+  if (tries >= 2) {
+    baseIntervals.push(30); // Add 30-day review
   }
-  state.ease = state.ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-  state.ease = Math.max(1.3, state.ease);
-  state.lastReview = new Date().toISOString().split('T')[0];
-  console.log('[craft] Updated state:', state);
-
-  // Save updated state
-  await setProblemState(problemName, state);
-
-  // Schedule next 5 reviews
-  const intervals = [];
-  let currentInterval = state.interval;
-  for (let i = 0; i < 5; i++) {
-    intervals.push(currentInterval);
-    currentInterval = Math.round(currentInterval * state.ease);
+  if (tries >= 4) {
+    baseIntervals.push(60); // Add 60-day review
   }
-  console.log('[craft] Intervals:', intervals);
+  
+  const intervals = baseIntervals;
+  console.log('[craft] Intervals based on difficulty:', difficulty, 'tries:', tries, '->', intervals);
 
   const today = new Date();
   const dates = intervals.map(days => {
@@ -431,7 +402,7 @@ async function scheduleRevision(problemName, difficulty, tries, link) {
     const payload = {
       tasks: [
         {
-          markdown: `Revise: [${problemName}](${link})`,
+          markdown: `Revise: ${problemName}\n${link}`,
           location: {
             type: "dailyNote",
             date: date

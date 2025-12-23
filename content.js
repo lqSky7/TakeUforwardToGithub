@@ -408,19 +408,21 @@ ${window.location.href}
         }
 
         // Schedule revisions (independent of Git success)
+        const problemLink = window.location.href;
+        console.log('[craft] Problem link:', problemLink);
         console.log('[craft] Sending scheduleRevision message:', {
             action: "scheduleRevision",
             problemName: QUES,
             difficulty: DIFFICULTY,
             tries: TRIES,
-            link: window.location.href
+            link: problemLink
         });
         chrome.runtime.sendMessage({
             action: "scheduleRevision",
             problemName: QUES,
             difficulty: DIFFICULTY,
             tries: TRIES,
-            link: window.location.href
+            link: problemLink
         }, (response) => {
             console.log('[craft] Response from background:', response);
         });
