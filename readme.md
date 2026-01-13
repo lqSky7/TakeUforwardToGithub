@@ -1,6 +1,10 @@
-# TakeUforward To GitHub 🚀
+# This project will not be maintained anymore, but we have an alternative with ios/android app support with a lot more features than just basic github push (works not only tuf, but all platforms) : https://leet-feedback.vercel.app/
+
+
+# TakeUforward To GitHub 
 
 ![Project Banner](assets/main.png)
+
 
 ## <u>Installation</u>
 
